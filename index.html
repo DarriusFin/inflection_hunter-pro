@@ -43,7 +43,6 @@
   .btn-pay{width:100%;padding:18px;margin-top:24px;border:none;border-radius:14px;font-size:1.2rem;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;transition:all .3s;}
   .btn-pay:hover{transform:scale(1.05);box-shadow:0 10px 30px rgba(0,255,136,0.4);}
   #closePay{position:absolute;top:20px;right:30px;font-size:3rem;cursor:pointer;opacity:0.7;}
-  #copyright{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:13px;color:#fff;background:rgba(0,0,0,0.5);padding:8px 24px;border-radius:20px;}
   #upgradeBtn{position:fixed;bottom:30px;right:30px;background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;padding:16px 36px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;z-index:100;box-shadow:0 8px 30px rgba(0,255,136,0.4);transition:all .3s;}
   #upgradeBtn:hover{transform:scale(1.08);}
 </style>
@@ -106,7 +105,7 @@
   Upgrade to Pro → Real-time Signals
 </div>
 
-<!-- 支付弹窗 - 已全部替换为你的真实支付链接 -->
+<!-- 支付弹窗 - 100% 使用你的三个正式支付链接 -->
 <div id="paywall">
   <div id="closePay" onclick="this.parentElement.style.display='none'">×</div>
   <h1>Inflection Hunter Pro</h1>
@@ -134,8 +133,6 @@
   </div>
   <p style="margin-top:40px;color:#888;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
 </div>
-
-<div id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</div>
 
 <script>
 const { DateTime } = luxon;
@@ -173,7 +170,7 @@ async function loadHistoricalData() {
   try {
     const resp = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=500`);
     const data = await resp.json();
-    const cdata = data.map(d => ({ time: d[0]/1000, open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4]) }));
+    const cdata = data.map(d => ({ time: d[0]/1000, open: +d[1], high: +d[2], low: +d[3], close: +d[4] }));
     candleSeries.setData(cdata);
     document.getElementById('signals').innerHTML = 'Live · Ready';
   } catch(e) {
@@ -251,13 +248,6 @@ function addSignal(type, price, time) {
 document.querySelectorAll('.tf-btn').forEach(b=>b.onclick=()=>{ document.querySelector('.tf-btn.active').classList.remove('active'); b.classList.add('active'); tf = b.dataset.tf; loadHistoricalData(); connect(); });
 document.getElementById('symbol').onchange=e=>{ symbol = e.target.value; loadHistoricalData(); connect(); };
 document.getElementById('showZigZag').onchange=()=>{ if(candleSeries.data().length) processCandle(candleSeries.data().slice(-1)[0]); };
-
-window.activatePro = function(type='forever') {
-  if (type==='forever') localStorage.setItem('inflection_pro','forever');
-  else { const d = new Date(); d.setMonth(d.getMonth() + (type==='year'?12:1)); localStorage.setItem('inflection_expiry', d.toISOString()); }
-  alert('Pro Activated Successfully! Refreshing...');
-  location.reload();
-};
 
 window.onresize = () => chart?.resize(document.getElementById('chartArea').clientWidth, document.getElementById('main').clientHeight);
 </script>
