@@ -14,13 +14,14 @@
   #brand{display:flex;align-items:center;gap:18px;}
   #brandLogo{font-size:34px;font-weight:900;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   #brandName{font-size:22px;font-weight:800;}
-  #company{font-size:13px;color:var(--text2);margin-top:2px;}
+  #company{font-size:13px;color:var(--text2);}
   #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;}
-  #main{display:flex;height:calc(100vh - 64px - 40px);}
+  #copyright{font-size:13px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 20px;border-radius:20px;}
+  #main{display:flex;height:calc(100vh - 64px);}
   #chartArea{flex:1;position:relative;background:#000;}
   #watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:9rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;}
   #sidebar{width:390px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;}
-  .panel{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:22px;}
+  .panel{background:rgba(background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:22px;}
   .panel h3{color:var(--green);font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
   .panel h3::before{content:"◆";font-size:12px;}
   #signals{max-height:380px;overflow-y:auto;}
@@ -43,9 +44,8 @@
   .btn-pay{width:100%;padding:18px;margin-top:24px;border:none;border-radius:14px;font-size:1.2rem;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;transition:all .3s;}
   .btn-pay:hover{transform:scale(1.05);box-shadow:0 10px 30px rgba(0,255,136,0.4);}
   #closePay{position:absolute;top:20px;right:30px;font-size:3rem;cursor:pointer;opacity:0.7;}
-  #upgradeBtn{position:fixed;bottom:50px;right:50px;background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;padding:16px 36px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;z-index:100;box-shadow:0 8px 30px rgba(0,255,136,0.4);transition:all .3s;}
+  #upgradeBtn{position:fixed;bottom:60px;right:60px;background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;padding:16px 36px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;z-index:100;box-shadow:0 8px 30px rgba(0,255,136,0.4);transition:all .3s;}
   #upgradeBtn:hover{transform:scale(1.08);}
-  footer{position:fixed;bottom:0;left:0;width:100%;height:40px;background:rgba(22,27,34,0.98);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;z-index:100;backdrop-filter:blur(10px);}
 </style>
 </head>
 <body>
@@ -58,7 +58,10 @@
       <div id="company">Darrius FinTech Inc</div>
     </div>
   </div>
-  <div id="status">Free Version · 60s Signal Delay</div>
+  <div style="display:flex;align-items:center;gap:20px;">
+    <div id="status">Free Version · 60s Signal Delay</div>
+    <div id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</div>
+  </div>
 </div>
 
 <div id="main">
@@ -71,22 +74,29 @@
     <div class="panel">
       <h3>Symbol & Timeframe</h3>
       <select id="symbol">
-        <option value="BTCUSDT">BTC/USDT</option>
-        <option value="ETHUSDT">ETH/USDT</option>
-        <option value="SOLUSDT">SOL/USDT</option>
-        <option value="BNBUSDT">BNB/USDT</option>
+        <option value="BTCUSD">BTC/USD (Crypto)</option>
+        <option value="ETHUSD">ETH/USD (Crypto)</option>
+        <option value="SOLUSD">SOL/USD (Crypto)</option>
+        <option value="AAPL">AAPL (Apple)</option>
+        <option value="TSLA">TSLA (Tesla)</option>
+        <option value="0700.HK">0700.HK (Tencent)</option>
+        <option value="9988.HK">9988.HK (Alibaba)</option>
+        <option value="^GSPC">S&P 500 Index</option>
+        <option value="^HSI">Hang Seng Index</option>
+        <option value="GC=F">Gold Futures</option>
+        <option value="CL=F">Crude Oil</option>
       </select>
       <div class="tf-buttons">
-        <button class="tf-btn active" data-tf="1m">1min</button>
-        <button class="tf-btn" data-tf="5m">5min</button>
-        <button class="tf-btn" data-tf="15m">15min</button>
-        <button class="tf-btn" data-tf="1h">1hour</button>
+        <button class="tf-btn active" data-tf="1min">1min</button>
+        <button class="tf-btn" data-tf="5min">5min</button>
+        <button class="tf-btn" data-tf="15min">15min</button>
+        <button class="tf-btn" data-tf="60min">1hour</button>
       </div>
     </div>
 
     <div class="panel">
       <h3>Live Signals</h3>
-      <div id="signals">Connecting...</div>
+      <div id="signals">Loading real-time data...</div>
     </div>
 
     <div class="panel">
@@ -96,7 +106,7 @@
     </div>
 
     <div class="panel" style="flex:1;text-align:center;padding-top:50px;">
-      <p style="color:var(--text2);font-size:14px;line-height:2;">World's Leading On-Chain Inflection Detection<br>Exclusively developed by Darrius FinTech Inc</p>
+      <p style="color:var(--text2);font-size:14px;line-height:2;">World's Leading Multi-Asset Inflection Detection<br>Exclusively developed by Darrius FinTech Inc</p>
     </div>
   </div>
 </div>
@@ -110,37 +120,35 @@
 <div id="paywall">
   <div id="closePay" onclick="this.parentElement.style.display='none'">×</div>
   <h1>Inflection Hunter Pro</h1>
-  <p style="font-size:1.5rem;margin:30px 0;max-width:700px;color:#00ff88;">Official Version by Darrius FinTech Inc</p>
+  <p style="font-size:1.5rem;margin:30px 0;color:#00ff88;">Official Version by Darrius FinTech Inc</p>
   <p style="font-size:1.3rem;margin:20px 0;max-width:700px;">Real-time precision signals · Remove delay & watermark · Voice popup alerts · Lifetime updates</p>
   <div class="cards">
     <div class="card">
-      <h3 style="font-size:1.6rem;margin-bottom:10px;">Monthly</h3>
+      <h3>Monthly</h3>
       <div class="price">$19.99</div>
-      <p style="color:#aaa;margin:15px 0;">Billed monthly<br>Cancel anytime</p>
+      <p>Billed monthly<br>Cancel anytime</p>
       <button class="btn-pay" onclick="location.href='https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02'">Choose Monthly</button>
     </div>
     <div class="card popular">
-      <h3 style="font-size:1.6rem;margin-bottom:10px;">Annual</h3>
+      <h3>Annual</h3>
       <div class="price">$99</div>
-      <p style="color:#aaa;margin:15px 0;"><strong>Only $8.25/month</strong><br><mark style="background:#00ff8822;color:var(--green);">Save 59%</mark></p>
+      <p><strong>Only $8.25/month</strong><br><mark>Save 59%</mark></p>
       <button class="btn-pay" onclick="location.href='https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01'">Annual Best Deal</button>
     </div>
     <div class="card">
-      <h3 style="font-size:1.6rem;margin-bottom:10px;">Lifetime</h3>
+      <h3>Lifetime</h3>
       <div class="price">$299</div>
-      <p style="color:#aaa;margin:15px 0;">One-time payment<br>Own forever · All future updates</p>
+      <p>One-time payment<br>Own forever</p>
       <button class="btn-pay" onclick="location.href='https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00'">Buy Lifetime Access</button>
     </div>
   </div>
   <p style="margin-top:40px;color:#888;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
 </div>
 
-<!-- 底部版权声明 -->
-<footer>
-  © 2025 Darrius FinTech Inc. All Rights Reserved.
-</footer>
-
 <script>
+// 你的真实 Alpha Vantage Key 已集成
+const API_KEY = 'SW01UC0FIU6LQ6HQ';
+
 const { DateTime } = luxon;
 const IS_PRO = localStorage.getItem('inflection_pro') === 'forever' || new Date(localStorage.getItem('inflection_expiry') || 0) > new Date();
 
@@ -150,13 +158,10 @@ if (IS_PRO) {
   document.getElementById('status').style.background = 'linear-gradient(90deg,#00ff88,#00d4ff)';
   document.getElementById('status').style.color = '#000';
   document.getElementById('upgradeBtn').style.display = 'none';
-} else {
-  setInterval(() => { if (!IS_PRO) document.getElementById('paywall').style.display = 'flex'; }, 240000);
 }
 
 let chart, candleSeries, zzSeries;
-let tf = '1m', symbol = 'BTCUSDT', ws;
-const TF_SEC = { '1m':60, '5m':300, '15m':900, '1h':3600 };
+let tf = '1min', symbol = 'BTCUSD';
 
 function initChart() {
   chart = LightweightCharts.createChart(document.getElementById('chartContainer'), {
@@ -171,73 +176,67 @@ function initChart() {
 }
 initChart();
 
-// 主数据加载函数（优先 Binance + 代理 → 失败则用高质量模拟数据）
 async function loadHistoricalData() {
-  document.getElementById('signals').innerHTML = 'Loading historical data...';
+  document.getElementById('signals').innerHTML = 'Loading real-time data...';
   try {
-    // 使用免费公共代理解决 CORS
-    const proxy = 'https://api.allorigins.win/raw?url=';
-    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=500`;
-    const resp = await fetch(proxy + encodeURIComponent(url));
-    if (!resp.ok) throw new Error('Network error');
+    let url;
+    if (symbol.includes('USD') && !symbol.includes('.')) {
+      // 加密货币
+      url = `https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=${symbol.replace('USD','')}&market=USD&interval=${tf}&apikey=${API_KEY}&outputsize=full`;
+    } else {
+      // 股票/指数/期货
+      url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=${tf}&apikey=${API_KEY}&outputsize=full`;
+    }
+    
+    const resp = await fetch(url);
     const data = await resp.json();
-    const cdata = data.map(d => ({
-      time: d[0]/1000,
-      open: +d[1],
-      high: +d[2],
-      low: +d[3],
-      close: +d[4]
-    }));
+    
+    if (data['Error Message'] || data['Note']) throw new Error('API Error');
+    
+    let seriesKey = symbol.includes('USD') && !symbol.includes('.') 
+      ? `Time Series Crypto (${tf})` 
+      : `Time Series (${tf})`;
+    
+    const series = data[seriesKey];
+    if (!series) throw new Error('No data');
+    
+    const entries = Object.entries(series).slice(0, 500);
+    const cdata = entries.map(([t, v]) => ({
+      time: Math.floor(new Date(t).getTime() / 1000),
+      open: parseFloat(v['1. open'] || v.open),
+      high: parseFloat(v['2. high'] || v.high),
+      low: parseFloat(v['3. low'] || v.low),
+      close: parseFloat(v['4. close'] || v.close)
+    })).reverse();
+    
     candleSeries.setData(cdata);
     document.getElementById('signals').innerHTML = 'Live · Connected';
   } catch (e) {
-    console.log('Binance API failed, switching to demo mode');
-    generateHighQualityMockData();
+    console.log('Alpha Vantage failed, using high-quality demo data');
+    generateMockData();
     document.getElementById('signals').innerHTML = 'Demo Mode · Dynamic Chart';
   }
 }
 loadHistoricalData();
 
-// 高质量模拟数据（保证打开即有专业动态K线）
-function generateHighQualityMockData() {
+// 高质量模拟数据（永不留白）
+function generateMockData() {
   const now = Math.floor(Date.now() / 1000);
-  const basePrice = symbol.includes('BTC') ? 67000 : symbol.includes('ETH') ? 3400 : 180;
+  const basePrice = symbol.includes('BTC') ? 67000 : symbol.includes('ETH') ? 3400 : symbol.includes('AAPL') ? 195 : 380;
   let price = basePrice;
   const data = [];
   for (let i = 499; i >= 0; i--) {
-    const time = now - i * (tf === '1m' ? 60 : tf === '5m' ? 300 : tf === '15m' ? 900 : 3600);
-    const change = (Math.random() - 0.5) * (basePrice * 0.003);
-    price += change;
+    const time = now - i * 60;
+    price += (Math.random() - 0.5) * basePrice * 0.002;
     const open = price;
-    const close = price + (Math.random() - 0.5) * (basePrice * 0.001);
-    const high = Math.max(open, close) + Math.random() * (basePrice * 0.0005);
-    const low = Math.min(open, close) - Math.random() * (basePrice * 0.0005);
+    const close = price + (Math.random() - 0.5) * basePrice * 0.001;
+    const high = Math.max(open, close) + Math.random() * basePrice * 0.0005;
+    const low = Math.min(open, close) - Math.random() * basePrice * 0.0005;
     data.push({ time, open, high, low, close });
   }
-  candleSeries.setData(data.reverse());
+  candleSeries.setData(data);
 }
 
-// WebSocket 实时更新（Binance官方，带重连）
-function connect() {
-  if (ws) ws.close();
-  ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${symbol.toLowerCase()}@kline_${tf}`);
-  ws.onmessage = e => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (!msg.data?.k?.x) return;
-      const k = msg.data.k;
-      const candle = { time: Math.floor(k.t/1000), open: +k.o, high: +k.h, low: +k.l, close: +k.c };
-      candleSeries.update(candle);
-      if (IS_PRO) processCandle(candle);
-      else setTimeout(() => processCandle(candle), 60000);
-    } catch (err) {}
-  };
-  ws.onclose = () => setTimeout(connect, 3000);
-  ws.onerror = () => setTimeout(connect, 5000);
-}
-connect();
-
-// 信号处理函数（保持不变）
 function processCandle(latest) {
   const data = candleSeries.data().slice(-100);
   if (data.length < 30) return;
@@ -246,8 +245,8 @@ function processCandle(latest) {
   const fractals = findFractals(data);
   if (zz.length >= 2) {
     const last = zz[zz.length-1], prev = zz[zz.length-2];
-    const confirm = fractals.slice(-10).some(f => Math.abs(f.time - last.time) <= TF_SEC[tf]*3 && ((prev.value > last.value && f.type === 'bottom') || (prev.value < last.value && f.type === 'top')));
-    if (confirm && Math.abs(last.time - latest.time) < TF_SEC[tf]*2) addSignal(prev.value > last.value ? 'buy' : 'sell', last.value, last.time);
+    const confirm = fractals.slice(-10).some(f => Math.abs(f.time - last.time) <= 3600*3 && ((prev.value > last.value && f.type === 'bottom') || (prev.value < last.value && f.type === 'top')));
+    if (confirm && Math.abs(last.time - latest.time) < 3600*2) addSignal(prev.value > last.value ? 'buy' : 'sell', last.value, last.time);
   }
 }
 
@@ -287,9 +286,19 @@ function addSignal(type, price, time) {
   }
 }
 
-document.querySelectorAll('.tf-btn').forEach(b=>b.onclick=()=>{ document.querySelector('.tf-btn.active').classList.remove('active'); b.classList.add('active'); tf = b.dataset.tf; loadHistoricalData(); connect(); });
-document.getElementById('symbol').onchange=e=>{ symbol = e.target.value; loadHistoricalData(); connect(); };
-document.getElementById('showZigZag').onchange=()=>{ if(candleSeries.data().length) processCandle(candleSeries.data().slice(-1)[0]); };
+document.querySelectorAll('.tf-btn').forEach(b=>b.onclick=()=>{ 
+  document.querySelector('.tf-btn.active')?.classList.remove('active'); 
+  b.classList.add('active'); 
+  tf = b.dataset.tf; 
+  loadHistoricalData(); 
+});
+document.getElementById('symbol').onchange=e=>{ 
+  symbol = e.target.value; 
+  loadHistoricalData(); 
+};
+document.getElementById('showZigZag').onchange=()=>{ 
+  if(candleSeries.data().length) processCandle(candleSeries.data().slice(-1)[0]); 
+};
 
 window.onresize = () => chart?.resize(document.getElementById('chartArea').clientWidth, document.getElementById('main').clientHeight);
 </script>
