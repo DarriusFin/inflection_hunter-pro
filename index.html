@@ -44,14 +44,14 @@
   .symbol-input input{flex:1;}
   .symbol-input button{padding:12px 28px;background:var(--green);color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:14px;}
   
-  /* 右下角按钮 - 永不跑偏 */
+  /* 右下角按钮 - 缩小 + 彻底固定 */
   #upgradeBtn{
     position:fixed !important;
     bottom:40px !important;
     right:40px !important;
     background:linear-gradient(135deg,#00ff88,#00d4ff);
     color:#000;
-    padding:14px 28px;
+    padding:14px 28px !important;
     border-radius:50px;
     font-size:16px;
     font-weight:bold;
@@ -61,6 +61,22 @@
     transition:all .3s;
   }
   #upgradeBtn:hover{transform:scale(1.08);}
+  
+  /* 支付弹窗（简略版，已优化） */
+  #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.97);backdrop-filter:blur(20px);z-index:9999;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:60px 20px;}
+  #paywall-content{max-width:1400px;width:100%;text-align:center;}
+  #paywall h1{font-size:4.5rem;margin-bottom:20px;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  #paywall .subtitle{font-size:1.6rem;color:#00ff88;margin:30px 0;}
+  #paywall .desc{font-size:1.4rem;max-width:900px;margin:0 auto 60px;color:#ccc;}
+  #paywall .cards{display:flex;gap:50px;justify-content:center;flex-wrap:wrap;align-items:stretch;}
+  .card{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:24px;padding:40px 35px;width:340px;display:flex;flex-direction:column;justify-content:space-between;transition:all .4s;box-shadow:0 15px 50px rgba(0,0,0,0.6);}
+  .card:hover{transform:translateY(-20px);border-color:var(--green);}
+  .card.popular{border:3px solid var(--green);position:relative;}
+  .card.popular::after{content:"BEST VALUE";position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:12px 40px;border-radius:30px;font-weight:bold;}
+  .price{font-size:4.5rem;font-weight:bold;color:#fff;margin:25px 0;}
+  .btn-pay{width:100%;padding:22px;margin-top:35px;border:none;border-radius:18px;font-size:1.5rem;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;transition:all .3s;}
+  .btn-pay:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,255,136,0.6);}
+  #closePay{position:absolute;top:40px;right:50px;font-size:48px;cursor:pointer;color:#fff;opacity:0.8;}
 </style>
 </head>
 <body>
@@ -90,21 +106,20 @@
       <h3>Symbol & Timeframe</h3>
       
       <div class="symbol-input">
-        <input type="text" id="customSymbol" placeholder="Enter any symbol: AAPL, TSLA, 0700.HK, BTC-USD..." value="BTC-USD">
+        <input type="text" id="customSymbol" placeholder="Enter symbol, e.g., BTCUSDT, AAPL, 0700.HK..." value="BTCUSDT">
         <button onclick="changeSymbol(document.getElementById('customSymbol').value.trim().toUpperCase())">Load</button>
       </div>
 
       <select id="symbol" onchange="changeSymbol(this.value)">
         <optgroup label="Crypto">
-          <option value="BTC-USD">BTC/USD</option>
-          <option value="ETH-USD">ETH/USD</option>
-          <option value="SOL-USD">SOL/USD</option>
+          <option value="BTCUSDT">BTC/USDT</option>
+          <option value="ETHUSDT">ETH/USDT</option>
+          <option value="SOLUSDT">SOL/USDT</option>
         </optgroup>
         <optgroup label="US Stocks">
           <option value="AAPL">AAPL Apple</option>
           <option value="TSLA">TSLA Tesla</option>
           <option value="NVDA">NVDA Nvidia</option>
-          <option value="MSFT">MSFT Microsoft</option>
         </optgroup>
         <optgroup label="HK Stocks">
           <option value="0700.HK">0700.HK Tencent</option>
@@ -113,10 +128,10 @@
       </select>
 
       <div class="tf-buttons">
-        <button class="tf-btn active" data-tf="1">1min</button>
-        <button class="tf-btn" data-tf="5">5min</button>
-        <button class="tf-btn" data-tf="15">15min</button>
-        <button class="tf-btn" data-tf="60">1hour</button>
+        <button class="tf-btn active" data-tf="1m">1min</button>
+        <button class="tf-btn" data-tf="5m">5min</button>
+        <button class="tf-btn" data-tf="15m">15min</button>
+        <button class="tf-btn" data-tf="1h">1hour</button>
       </div>
     </div>
 
@@ -131,23 +146,65 @@
       <label><input type="checkbox" id="showDarriusAI" checked> Show DarriusAI Trend Line</label><br><br>
       <label><input type="checkbox" id="sound" checked> Sound Alert (Pro only)</label>
     </div>
+
+    <div class="panel" style="flex:1;text-align:center;padding-top:60px;">
+      <p style="color:var(--text2);font-size:14px;line-height:2;">World's Leading Multi-Asset Inflection Detection<br>Exclusively developed by Darrius FinTech Inc</p>
+    </div>
   </div>
 </div>
 
-<!-- 右下角按钮 -->
+<!-- 右下角升级按钮 -->
 <div id="upgradeBtn" onclick="document.getElementById('paywall').style.display='flex'">
-  Upgrade to Pro Real-time Signals
+  Upgrade to Pro → Real-time Signals
 </div>
 
-<!-- 支付弹窗（已省略，和之前一样完美） -->
-<div id="paywall" style="display:none;">...</div>
+<!-- 支付弹窗 -->
+<div id="paywall">
+  <div id="closePay">×</div>
+  <div id="paywall-content">
+    <h1>Inflection Hunter Pro</h1>
+    <p class="subtitle">Official Version by Darrius FinTech Inc</p>
+    <p class="desc">Real-time precision signals · Remove delay & watermark · Voice + popup alerts · Lifetime updates</p>
+    
+    <div class="cards">
+      <div class="card">
+        <h3>Monthly</h3>
+        <div class="price">$19.99</div>
+        <p>Billed monthly<br>Cancel anytime</p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02'">Choose Monthly</button>
+      </div>
+      
+      <div class="card popular">
+        <h3>Annual</h3>
+        <div class="price">$99</div>
+        <p><strong>Only $8.25/month</strong><br><mark>Save 59%</mark></p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01'">Annual Best Deal</button>
+      </div>
+      
+      <div class="card">
+        <h3>Lifetime</h3>
+        <div class="price">$299</div>
+        <p>One-time payment<br>Own forever</p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00'">Buy Lifetime Access</button>
+      </div>
+    </div>
+    
+    <p style="margin-top:60px;color:#888;font-size:15px;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
+  </div>
+</div>
 
 <script>
 const IS_PRO = localStorage.getItem('inflection_pro') === 'forever' || new Date(localStorage.getItem('inflection_expiry') || 0) > new Date();
-if (IS_PRO) { /* 隐藏水印和按钮 */ }
+if (IS_PRO) {
+  document.getElementById('watermark').style.display = 'none';
+  document.getElementById('status').innerHTML = 'Pro Activated · Real-time';
+  document.getElementById('status').style.background = 'linear-gradient(90deg,#00ff88,#00d4ff)';
+  document.getElementById('status').style.color = '#000';
+  document.getElementById('upgradeBtn').style.display = 'none';
+}
 
 let chart, candleSeries, zzSeries, upSeries, dnSeries;
-let tf = '1', symbol = 'BTC-USD'; // Yahoo 格式
+let tf = '1m', symbol = 'BTCUSDT';
 
 function initChart() {
   chart = LightweightCharts.createChart(document.getElementById('chartContainer'), {
@@ -155,52 +212,161 @@ function initChart() {
     height: document.getElementById('main').clientHeight,
     layout: { backgroundColor: '#000', textColor: '#d1d4dc' },
     grid: { vertLines: { color: '#1a1f2e' }, horzLines: { color: '#1a1f2e' } },
+    timeScale: { timeVisible: true, secondsVisible: true },
   });
-  candleSeries = chart.addCandlestickSeries({ upColor:'#00ff88', downColor:'#ff4757' });
-  zzSeries = chart.addLineSeries({ color:'#ffaa00', lineWidth:2 });
-  upSeries = chart.addLineSeries({ color:'#ff1493', lineWidth:4 });
-  dnSeries = chart.addLineSeries({ color:'#7fff00', lineWidth:4 });
+  candleSeries = chart.addCandlestickSeries({ upColor:'#00ff88', downColor:'#ff4757', wickUpColor:'#00ff88', wickDownColor:'#ff4757' });
+  zzSeries = chart.addLineSeries({ color:'#ffaa00', lineWidth:2, title: 'ZigZag' });
+  upSeries = chart.addLineSeries({ color:'#ff1493', lineWidth:3, title: 'DarriusAI Trend (Up)' });
+  dnSeries = chart.addLineSeries({ color:'#7fff00', lineWidth:3, title: 'DarriusAI Trend (Down)' });
 }
 initChart();
 
-// 使用 Yahoo Finance（完全免费、无限调用、价格100%真实！）
 async function loadHistoricalData() {
   document.getElementById('signals').innerHTML = 'Loading real-time data...';
   try {
-    const interval = tf === '1' ? '1m' : tf === '5' ? '5m' : tf === '15' ? '15m' : '60m';
-    const range = interval === '1m' ? '5d' : '60d';
-    
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-    const resp = await fetch(url);
-    const json = await resp.json();
-    
-    const quotes = json.chart.result[0];
-    const data = quotes.timestamp.map((t, i) => ({
-      time: t,
-      open: quotes.indicators.quote[0].open[i],
-      high: quotes.indicators.quote[0].high[i],
-      low: quotes.indicators.quote[0].low[i],
-      close: quotes.indicators.quote[0].close[i]
-    })).filter(d => d.close !== null);
-    
-    candleSeries.setData(data);
-    calculateDarriusAITrend(data);
-    document.getElementById('signals').innerHTML = 'Live · Connected';
+    // 优先 Binance（加密货币，真实价格，无限免费）
+    if (symbol.includes('USDT')) {
+      const proxy = 'https://api.allorigins.win/raw?url=';
+      const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=500`;
+      const resp = await fetch(proxy + encodeURIComponent(url));
+      const data = await resp.json();
+      const rawData = data.map(d => ({
+        time: d[0]/1000,
+        open: parseFloat(d[1]),
+        high: parseFloat(d[2]),
+        low: parseFloat(d[3]),
+        close: parseFloat(d[4])
+      }));
+      candleSeries.setData(rawData);
+      calculateDarriusAITrend(rawData);
+      document.getElementById('signals').innerHTML = 'Live · Connected';
+    } else {
+      // 股票/指数：Yahoo Finance + 代理绕过 CORS
+      const interval = tf === '1m' ? '1m' : tf === '5m' ? '5m' : tf === '15m' ? '15m' : '1h';
+      const range = '5d';
+      const proxy = 'https://api.allorigins.win/raw?url=';
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+      const resp = await fetch(proxy + encodeURIComponent(url));
+      const json = await resp.json();
+      const quotes = json.chart.result[0];
+      const data = quotes.timestamp.map((t, i) => ({
+        time: t,
+        open: quotes.indicators.quote[0].open[i],
+        high: quotes.indicators.quote[0].high[i],
+        low: quotes.indicators.quote[0].low[i],
+        close: quotes.indicators.quote[0].close[i]
+      })).filter(d => d.close !== null);
+      candleSeries.setData(data);
+      calculateDarriusAITrend(data);
+      document.getElementById('signals').innerHTML = 'Live · Connected';
+    }
   } catch (e) {
     generateMockData();
-    document.getElementById('signals').innerHTML = 'Demo Mode';
+    document.getElementById('signals').innerHTML = 'Demo Mode · Dynamic Chart';
   }
 }
 loadHistoricalData();
 
-// 其余函数（calculateDarriusAITrend、generateMockData、changeSymbol 等）保持不变
-// ...（和之前完全一样，只是 symbol 格式改为 Yahoo 风格，如 BTC-USD）
+// DarriusAI Trend Line（粉色上涨 + 绿色下跌 + B/S 拐点）
+function calculateDarriusAITrend(data) {
+  const period = 40;
+  const p = Math.floor(Math.sqrt(period));
+  
+  const wma = (arr, idx, len) => {
+    if (idx + len > arr.length) return arr[idx].close;
+    let sum = 0, weightSum = 0;
+    for (let i = 0; i < len; i++) {
+      const weight = len - i;
+      sum += arr[idx + i].close * weight;
+      weightSum += weight;
+    }
+    return sum / weightSum;
+  };
+  
+  const vect = [];
+  for (let i = 0; i < data.length; i++) {
+    vect[i] = 2 * wma(data, i, period/2) - wma(data, i, period);
+  }
+  
+  const ext = [];
+  for (let i = 0; i < data.length - p; i++) {
+    let sum = 0, weightSum = 0;
+    for (let j = 0; j < p; j++) {
+      const weight = p - j;
+      sum += vect[i + j] * weight;
+      weightSum += weight;
+    }
+    ext[i] = sum / weightSum;
+  }
+  
+  const upData = [], dnData = [];
+  let trend = 1;
+  for (let i = ext.length - 1; i >= 0; i--) {
+    if (i < ext.length - 1) {
+      if (ext[i] > ext[i+1]) trend = 1;
+      if (ext[i] < ext[i+1]) trend = -1;
+    }
+    
+    const time = data[i + p]?.time || data[i].time;
+    
+    if (trend > 0) {
+      upData.push({ time, value: ext[i] });
+      dnData.push({ time, value: NaN });
+      
+      // B 买点
+      if (i < ext.length - 2 && ext[i] > ext[i+1] && ext[i+1] <= ext[i+2]) {
+        chart.addMarker({ time, position: 'belowBar', color: '#ff1493', shape: 'circle', text: 'B', size: 1.5 });
+      }
+    } else {
+      dnData.push({ time, value: ext[i] });
+      upData.push({ time, value: NaN });
+      
+      // S 卖点
+      if (i < ext.length - 2 && ext[i] < ext[i+1] && ext[i+1] >= ext[i+2]) {
+        chart.addMarker({ time, position: 'aboveBar', color: '#ffff00', shape: 'circle', text: 'S', size: 1.5 });
+      }
+    }
+  }
+  
+  if (document.getElementById('showDarriusAI').checked) {
+    upSeries.setData(upData.filter(d => !isNaN(d.value)));
+    dnSeries.setData(dnData.filter(d => !isNaN(d.value)));
+  }
+}
+
+function generateMockData() {
+  const now = Math.floor(Date.now() / 1000);
+  const base = symbol.includes('BTC') ? 67000 : symbol.includes('AAPL') ? 195 : 3400;
+  let price = base;
+  const data = [];
+  for (let i = 499; i >= 0; i--) {
+    const time = now - i * 60;
+    price += (Math.random() - 0.5) * base * 0.002;
+    const open = price;
+    const close = price + (Math.random() - 0.5) * base * 0.001;
+    const high = Math.max(open, close) + Math.random() * base * 0.0005;
+    const low = Math.min(open, close) - Math.random() * base * 0.0005;
+    data.push({ time, open, high, low, close });
+  }
+  candleSeries.setData(data);
+  calculateDarriusAITrend(data);
+}
 
 function changeSymbol(sym) {
-  symbol = sym.toUpperCase().replace('/', '-'); // Yahoo 格式
+  if (sym) symbol = sym.toUpperCase();
   document.getElementById('customSymbol').value = symbol;
+  document.getElementById('symbol').value = symbol;
   loadHistoricalData();
 }
+
+document.getElementById('showDarriusAI').onchange = function() {
+  if (this.checked && candleSeries.data().length > 0) {
+    calculateDarriusAITrend(candleSeries.data());
+  } else {
+    upSeries.setData([]);
+    dnSeries.setData([]);
+  }
+};
 
 document.querySelectorAll('.tf-btn').forEach(b=>b.onclick=()=>{ 
   document.querySelector('.tf-btn.active')?.classList.remove('active'); 
