@@ -60,24 +60,28 @@
   .btn-pay:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,255,136,0.6);}
   #closePay{position:absolute;top:40px;right:50px;font-size:48px;cursor:pointer;color:#fff;opacity:0.8;}
   
-  /* 右下角按钮 - 永不跑偏（已加 !important） */
+  /* 右下角按钮 - 缩小 + 彻底固定！ */
   #upgradeBtn{
     position:fixed !important;
-    bottom:60px !important;
-    right:60px !important;
+    bottom:40px !important;
+    right:40px !important;
     background:linear-gradient(135deg,#00ff88,#00d4ff);
     color:#000;
-    padding:20px 44px;
+    padding:14px 28px !important;
     border-radius:50px;
-    font-size:19px;
+    font-size:16px;
     font-weight:bold;
     cursor:pointer;
     z-index:99999 !important;
-    box-shadow:0 12px 40px rgba(0,255,136,0.6);
+    box-shadow:0 10px 30px rgba(0,255,136,0.6);
     transition:all .3s;
-    pointer-events:auto;
+    white-space:nowrap;
+    max-width:280px;
   }
-  #upgradeBtn:hover{transform:scale(1.1);box-shadow:0 20px 50px rgba(0,255,136,0.8);}
+  #upgradeBtn:hover{
+    transform:scale(1.08);
+    box-shadow:0 18px 45px rgba(0,255,136,0.8);
+  }
 </style>
 </head>
 <body>
@@ -155,7 +159,7 @@
   </div>
 </div>
 
-<!-- 右下角升级按钮（永不跑偏） -->
+<!-- 右下角按钮（已缩小+彻底固定） -->
 <div id="upgradeBtn" onclick="document.getElementById('paywall').style.display='flex'">
   Upgrade to Pro → Real-time Signals
 </div>
@@ -190,8 +194,6 @@
         <button class="btn-pay" onclick="location.href='https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00'">Buy Lifetime Access</button>
       </div>
     </div>
-    
-    <p style="margin-top:60px;color:#888;font-size:15px;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
   </div>
 </div>
 
@@ -269,7 +271,7 @@ async function loadHistoricalData() {
 }
 loadHistoricalData();
 
-// DarriusAI Trend Line 完整移植（已实测完美显示）
+// DarriusAI Trend Line（粉色上涨 + 绿色下跌 + B/S 拐点）
 function calculateDarriusAITrend(data) {
   const period = 40;
   const p = Math.floor(Math.sqrt(period));
@@ -314,18 +316,14 @@ function calculateDarriusAITrend(data) {
     if (trend > 0) {
       upData.push({ time, value: ext[i] });
       dnData.push({ time, value: NaN });
-      
-      // B 买点
       if (i < ext.length - 2 && ext[i] > ext[i+1] && ext[i+1] <= ext[i+2]) {
-        chart.addMarker({ time, position: 'belowBar', color: '#ff1493', shape: 'circle', text: 'B' });
+        chart.addMarker({ time, position: 'belowBar', color: '#ff1493', shape: 'circle', text: 'B', size: 1.5 });
       }
     } else {
       dnData.push({ time, value: ext[i] });
       upData.push({ time, value: NaN });
-      
-      // S 卖点
       if (i < ext.length - 2 && ext[i] < ext[i+1] && ext[i+1] >= ext[i+2]) {
-        chart.addMarker({ time, position: 'aboveBar', color: '#ffff00', shape: 'circle', text: 'S' });
+        chart.addMarker({ time, position: 'aboveBar', color: '#ffff00', shape: 'circle', text: 'S', size: 1.5 });
       }
     }
   }
@@ -361,7 +359,6 @@ function changeSymbol(sym) {
   loadHistoricalData();
 }
 
-// 显示/隐藏 DarriusAI Trend Line
 document.getElementById('showDarriusAI').onchange = function() {
   if (this.checked && candleSeries.data().length > 0) {
     calculateDarriusAITrend(candleSeries.data());
