@@ -90,20 +90,21 @@
       <h3>Symbol & Timeframe</h3>
       
       <div class="symbol-input">
-        <input type="text" id="customSymbol" placeholder="Enter symbol, e.g., BTCUSDT, AAPL, 0700.HK..." value="BTCUSDT">
+        <input type="text" id="customSymbol" placeholder="Enter symbol, e.g., AAPL, TSLA, 0700.HK, BTC-USD..." value="BTC-USD">
         <button onclick="changeSymbol(document.getElementById('customSymbol').value.trim().toUpperCase())">Load</button>
       </div>
 
       <select id="symbol" onchange="changeSymbol(this.value)">
         <optgroup label="Crypto">
-          <option value="BTCUSDT">BTC/USDT</option>
-          <option value="ETHUSDT">ETH/USDT</option>
-          <option value="SOLUSDT">SOL/USDT</option>
+          <option value="BTC-USD">BTC/USD</option>
+          <option value="ETH-USD">ETH/USD</option>
+          <option value="SOL-USD">SOL/USD</option>
         </optgroup>
         <optgroup label="US Stocks">
           <option value="AAPL">AAPL Apple</option>
           <option value="TSLA">TSLA Tesla</option>
           <option value="NVDA">NVDA Nvidia</option>
+          <option value="MSFT">MSFT Microsoft</option>
         </optgroup>
         <optgroup label="HK Stocks">
           <option value="0700.HK">0700.HK Tencent</option>
@@ -112,10 +113,10 @@
       </select>
 
       <div class="tf-buttons">
-        <button class="tf-btn active" data-tf="1m">1min</button>
-        <button class="tf-btn" data-tf="5m">5min</button>
-        <button class="tf-btn" data-tf="15m">15min</button>
-        <button class="tf-btn" data-tf="1h">1hour</button>
+        <button class="tf-btn active" data-tf="1">1min</button>
+        <button class="tf-btn" data-tf="5">5min</button>
+        <button class="tf-btn" data-tf="15">15min</button>
+        <button class="tf-btn" data-tf="60">1hour</button>
       </div>
     </div>
 
@@ -143,11 +144,43 @@
 </div>
 
 <!-- 支付弹窗 -->
-<div id="paywall" style="display:none;">[Payment Modal Content - Same as before]</div>
+<div id="paywall">
+  <div id="closePay">×</div>
+  <div id="paywall-content">
+    <h1>Inflection Hunter Pro</h1>
+    <p class="subtitle">Official Version by Darrius FinTech Inc</p>
+    <p class="desc">Real-time precision signals · Remove delay & watermark · Voice + popup alerts · Lifetime updates</p>
+    
+    <div class="cards">
+      <div class="card">
+        <h3>Monthly</h3>
+        <div class="price">$19.99</div>
+        <p>Billed monthly<br>Cancel anytime</p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02'">Choose Monthly</button>
+      </div>
+      
+      <div class="card popular">
+        <h3>Annual</h3>
+        <div class="price">$99</div>
+        <p><strong>Only $8.25/month</strong><br><mark>Save 59%</mark></p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01'">Annual Best Deal</button>
+      </div>
+      
+      <div class="card">
+        <h3>Lifetime</h3>
+        <div class="price">$299</div>
+        <p>One-time payment<br>Own forever</p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00'">Buy Lifetime Access</button>
+      </div>
+    </div>
+    
+    <p style="margin-top:60px;color:#888;font-size:15px;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
+  </div>
+</div>
 
 <script>
-// 备用 Alpha Vantage Key（你的旧 Key）
-const ALPHA_KEY = 'SW01UC0FIU6LQ6HQ';
+// 你的真实 Massive (Polygon) API Key 已集成
+const MASSIVE_KEY = 'jVW1ERqDDGAquZJr9|ZfZhhstEZLchpE';
 
 const IS_PRO = localStorage.getItem('inflection_pro') === 'forever' || new Date(localStorage.getItem('inflection_expiry') || 0) > new Date();
 if (IS_PRO) {
@@ -159,7 +192,7 @@ if (IS_PRO) {
 }
 
 let chart, candleSeries, zzSeries, upSeries, dnSeries;
-let tf = '1m', symbol = 'BTCUSDT';
+let tf = '1', symbol = 'BTC-USD';
 
 function initChart() {
   chart = LightweightCharts.createChart(document.getElementById('chartContainer'), {
@@ -167,68 +200,52 @@ function initChart() {
     height: document.getElementById('main').clientHeight,
     layout: { backgroundColor: '#000', textColor: '#d1d4dc' },
     grid: { vertLines: { color: '#1a1f2e' }, horzLines: { color: '#1a1f2e' } },
-    timeScale: { timeVisible: true, secondsVisible: true },
   });
-  candleSeries = chart.addCandlestickSeries({ upColor:'#00ff88', downColor:'#ff4757', wickUpColor:'#00ff88', wickDownColor:'#ff4757' });
-  zzSeries = chart.addLineSeries({ color:'#ffaa00', lineWidth:2, title: 'ZigZag' });
-  upSeries = chart.addLineSeries({ color:'#ff1493', lineWidth:3, title: 'DarriusAI Trend (Up)' });
-  dnSeries = chart.addLineSeries({ color:'#7fff00', lineWidth:3, title: 'DarriusAI Trend (Down)' });
+  candleSeries = chart.addCandlestickSeries({ upColor:'#00ff88', downColor:'#ff4757' });
+  zzSeries = chart.addLineSeries({ color:'#ffaa00', lineWidth:2 });
+  upSeries = chart.addLineSeries({ color:'#ff1493', lineWidth:4 });
+  dnSeries = chart.addLineSeries({ color:'#7fff00', lineWidth:4 });
 }
 initChart();
 
 async function loadHistoricalData() {
   document.getElementById('signals').innerHTML = 'Loading real-time data...';
   try {
-    let rawData = [];
+    const multiplier = tf === '1' ? 1 : tf === '5' ? 5 : tf === '15' ? 15 : 60;
+    const timespan = multiplier <= 15 ? 'minute' : 'hour';
+    const from = Math.floor(Date.now() / 1000) - 86400 * 5; // 5 天
+    const to = Math.floor(Date.now() / 1000);
     
-    if (symbol.includes('USDT')) {
-      // Binance for Crypto (无限免费，真实 91,430+ USD)
-      const proxy = 'https://api.allorigins.win/raw?url=';
-      const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=500`;
-      const resp = await fetch(proxy + encodeURIComponent(url));
-      const data = await resp.json();
-      rawData = data.map(d => ({
-        time: d[0] / 1000,
-        open: parseFloat(d[1]),
-        high: parseFloat(d[2]),
-        low: parseFloat(d[3]),
-        close: parseFloat(d[4])
-      }));
-    } else {
-      // Alpha Vantage for Stocks (你的 Key，真实 195+ USD)
-      const interval = tf === '1m' ? '1min' : tf === '5m' ? '5min' : tf === '15m' ? '15min' : '60min';
-      const url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=${interval}&apikey=${ALPHA_KEY}&outputsize=full`;
-      const resp = await fetch(url);
-      const json = await resp.json();
-      const seriesKey = `Time Series (${interval})`;
-      const series = json[seriesKey];
-      if (!series) throw new Error('No data');
-      const entries = Object.entries(series).slice(0, 500);
-      rawData = entries.map(([t, v]) => ({
-        time: Math.floor(new Date(t).getTime() / 1000),
-        open: parseFloat(v['1. open']),
-        high: parseFloat(v['2. high']),
-        low: parseFloat(v['3. low']),
-        close: parseFloat(v['4. close'])
-      })).reverse();
+    const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/${multiplier}/${timespan}/${from}/${to}?adjusted=true&sort=asc&limit=500&apiKey=${MASSIVE_KEY}`;
+    
+    const resp = await fetch(url);
+    const json = await resp.json();
+    
+    if (json.status !== 'OK' || !json.results) {
+      document.getElementById('signals').innerHTML = 'API Error: Invalid Key - Check Dashboard';
+      throw new Error('API Error');
     }
     
-    if (rawData.length === 0) throw new Error('No data');
+    const data = json.results.map(d => ({
+      time: d.t / 1000,
+      open: d.o,
+      high: d.h,
+      low: d.l,
+      close: d.c
+    }));
     
-    candleSeries.setData(rawData);
-    calculateDarriusAITrend(rawData);
+    candleSeries.setData(data);
+    calculateDarriusAITrend(data);
     document.getElementById('signals').innerHTML = 'Live · Connected';
   } catch (e) {
-    console.error('Data load error:', e);
     generateMockData();
     document.getElementById('signals').innerHTML = 'Demo Mode · Dynamic Chart';
   }
 }
 loadHistoricalData();
 
-// DarriusAI Trend Line（修复索引 bug，安全运行）
+// DarriusAI Trend Line（粉色上涨 + 绿色下跌 + B/S 拐点）
 function calculateDarriusAITrend(data) {
-  if (data.length < 40) return; // 安全检查
   const period = 40;
   const p = Math.floor(Math.sqrt(period));
   
@@ -252,11 +269,9 @@ function calculateDarriusAITrend(data) {
   for (let i = 0; i < data.length - p; i++) {
     let sum = 0, weightSum = 0;
     for (let j = 0; j < p; j++) {
-      if (i + j < vect.length) {
-        const weight = p - j;
-        sum += vect[i + j] * weight;
-        weightSum += weight;
-      }
+      const weight = p - j;
+      sum += vect[i + j] * weight;
+      weightSum += weight;
     }
     ext[i] = sum / weightSum;
   }
@@ -269,7 +284,7 @@ function calculateDarriusAITrend(data) {
       if (ext[i] < ext[i+1]) trend = -1;
     }
     
-    const time = data[Math.min(i + p, data.length - 1)].time; // 安全索引
+    const time = data[i + p]?.time || data[i].time;
     
     if (trend > 0) {
       upData.push({ time, value: ext[i] });
@@ -294,7 +309,7 @@ function calculateDarriusAITrend(data) {
 
 function generateMockData() {
   const now = Math.floor(Date.now() / 1000);
-  const base = symbol.includes('BTC') ? 91430 : symbol.includes('AAPL') ? 195 : 3400; // 更新为当前真实价格
+  const base = symbol.includes('BTC') ? 91430 : symbol.includes('AAPL') ? 195 : 3400;
   let price = base;
   const data = [];
   for (let i = 499; i >= 0; i--) {
