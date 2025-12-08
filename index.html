@@ -10,15 +10,13 @@
   :root{--bg:#0a0e17;--card:#161b22;--border:#30363d;--green:#00ff88;--red:#ff4757;--text:#e6edf3;--text2:#8b949e;}
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;background:radial-gradient(circle at top left,#1a1f2e,#0a0e17);}
-  
-  #topbar{height:64px;background:rgba(22,27,34,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;z-index:100;}
+  #topbar{height:64px;background:rgba(22,27,34,0.98);backdrop:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;z-index:100;}
   #brand{display:flex;align-items:center;gap:18px;}
   #brandLogo{font-size:34px;font-weight:900;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   #brandName{font-size:22px;font-weight:800;}
   #company{font-size:13px;color:var(--text2);}
   #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;}
   #copyright{font-size:13px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 20px;border-radius:20px;}
-
   #main{display:flex;height:calc(100vh - 64px);}
   #chartArea{flex:1;position:relative;background:#000;}
   #watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:9rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;}
@@ -31,31 +29,29 @@
   .buy{background:rgba(0,255,136,0.12);border-color:var(--green);}
   .sell{background:rgba(255,71,87,0.12);border-color:var(--red);}
   @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
-
   .tf-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
   .tf-btn{padding:9px 16px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;transition:all .2s;}
   .tf-btn.active{background:var(--green);color:#000;border-color:var(--green);font-weight:bold;}
   select,input[type=checkbox],input[type=text]{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);margin:8px 0;}
-
-  /* 支付弹窗 - 完美排版 */
+  
+  /* 支付弹窗完美排版 */
   #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.97);backdrop-filter:blur(20px);z-index:9999;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:60px 20px;}
   #paywall-content{max-width:1400px;width:100%;text-align:center;}
   #paywall h1{font-size:4.5rem;margin-bottom:20px;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   #paywall .subtitle{font-size:1.6rem;color:#00ff88;margin:30px 0;}
   #paywall .desc{font-size:1.4rem;max-width:900px;margin:0 auto 60px;color:#ccc;}
-  #paywall .cards{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;align-items:stretch;}
+  #paywall .cards{display:flex;gap:50px;justify-content:center;flex-wrap:wrap;align-items:stretch;}
   .card{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:24px;padding:40px 35px;width:340px;display:flex;flex-direction:column;justify-content:space-between;transition:all .4s;box-shadow:0 15px 50px rgba(0,0,0,0.6);}
   .card:hover{transform:translateY(-20px);border-color:var(--green);box-shadow:0 25px 60px rgba(0,255,136,0.3);}
   .card.popular{border:3px solid var(--green);position:relative;}
   .card.popular::after{content:"BEST VALUE";position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:12px 40px;border-radius:30px;font-weight:bold;font-size:15px;}
   .price{font-size:4.5rem;font-weight:bold;color:#fff;margin:25px 0;}
-  .price small{font-size:1.8rem;color:#aaa;}
   .btn-pay{width:100%;padding:22px;margin-top:35px;border:none;border-radius:18px;font-size:1.5rem;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;transition:all .3s;}
   .btn-pay:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,255,136,0.6);}
   #closePay{position:absolute;top:40px;right:50px;font-size:48px;cursor:pointer;color:#fff;opacity:0.8;transition:.3s;}
   #closePay:hover{opacity:1;transform:scale(1.1);}
 
-  /* 右下角按钮 - 永不跑偏 */
+  /* 右下角按钮永不跑偏 */
   #upgradeBtn{position:fixed;bottom:60px;right:60px;background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;padding:20px 44px;border-radius:50px;font-size:19px;font-weight:bold;cursor:pointer;z-index:100;box-shadow:0 12px 40px rgba(0,255,136,0.6);transition:all .3s;}
   #upgradeBtn:hover{transform:scale(1.1);box-shadow:0 20px 50px rgba(0,255,136,0.8);}
 
@@ -96,27 +92,20 @@
       </div>
 
       <select id="symbol" onchange="changeSymbol(this.value)">
-        <optgroup label="加密货币">
+        <optgroup label="加密货币 Crypto">
           <option value="BTCUSD">BTC/USD</option>
           <option value="ETHUSD">ETH/USD</option>
           <option value="SOLUSD">SOL/USD</option>
-          <option value="BNBUSD">BNB/USD</option>
         </optgroup>
-        <optgroup label="美股">
+        <optgroup label="美股 US Stocks">
           <option value="AAPL">AAPL Apple</option>
           <option value="TSLA">TSLA Tesla</option>
           <option value="NVDA">NVDA Nvidia</option>
-          <option value="GOOGL">GOOGL Google</option>
           <option value="MSFT">MSFT Microsoft</option>
         </optgroup>
-        <optgroup label="港股">
+        <optgroup label="港股 HK Stocks">
           <option value="0700.HK">0700.HK Tencent</option>
           <option value="9988.HK">9988.HK Alibaba</option>
-        </optgroup>
-        <optgroup label="指数/商品">
-          <option value="^GSPC">S&P 500</option>
-          <option value="^HSI">恒生指数</option>
-          <option value="GC=F">黄金</option>
         </optgroup>
       </select>
 
@@ -136,6 +125,7 @@
     <div class="panel">
       <h3>Settings</h3>
       <label><input type="checkbox" id="showZigZag" checked> Show ZigZag Line</label><br><br>
+      <label><input type="checkbox" id="showDarriusAI" checked> Show DarriusAI Trend Line</label><br><br>
       <label><input type="checkbox" id="sound" checked> Sound Alert (Pro only)</label>
     </div>
 
@@ -145,12 +135,12 @@
   </div>
 </div>
 
-<!-- 右下角按钮（位置完美） -->
+<!-- 右下角升级按钮（永不跑偏） -->
 <div id="upgradeBtn" onclick="document.getElementById('paywall').style.display='flex'">
   Upgrade to Pro → Real-time Signals
 </div>
 
-<!-- 支付弹窗（排版完美） -->
+<!-- 支付弹窗（完美排版） -->
 <div id="paywall">
   <div id="closePay">×</div>
   <div id="paywall-content">
@@ -200,7 +190,7 @@ if (IS_PRO) {
   document.getElementById('upgradeBtn').style.display = 'none';
 }
 
-let chart, candleSeries, zzSeries;
+let chart, candleSeries, zzSeries, upSeries, dnSeries;
 let tf = '1min', symbol = 'BTCUSD';
 
 function initChart() {
@@ -212,7 +202,9 @@ function initChart() {
     timeScale: { timeVisible: true, secondsVisible: true },
   });
   candleSeries = chart.addCandlestickSeries({ upColor:'#00ff88', downColor:'#ff4757', wickUpColor:'#00ff88', wickDownColor:'#ff4757' });
-  zzSeries = chart.addLineSeries({ color:'#ffaa00', lineWidth:2 });
+  zzSeries = chart.addLineSeries({ color:'#ffaa00', lineWidth:2, title: 'ZigZag' });
+  upSeries = chart.addLineSeries({ color:'#ff1493', lineWidth:3, title: 'DarriusAI Trend (Up)' });
+  dnSeries = chart.addLineSeries({ color:'#7fff00', lineWidth:3, title: 'DarriusAI Trend (Down)' });
 }
 initChart();
 
@@ -239,7 +231,7 @@ async function loadHistoricalData() {
     if (!series) throw new Error('No data');
     
     const entries = Object.entries(series).slice(0, 500);
-    const cdata = entries.map(([t, v]) => ({
+    const rawData = entries.map(([t, v]) => ({
       time: Math.floor(new Date(t).getTime() / 1000),
       open: parseFloat(v['1. open'] || v.open),
       high: parseFloat(v['2. high'] || v.high),
@@ -247,7 +239,8 @@ async function loadHistoricalData() {
       close: parseFloat(v['4. close'] || v.close)
     })).reverse();
     
-    candleSeries.setData(cdata);
+    candleSeries.setData(rawData);
+    calculateDarriusAITrend(rawData);
     document.getElementById('signals').innerHTML = 'Live · Connected';
   } catch (e) {
     generateMockData();
@@ -255,6 +248,76 @@ async function loadHistoricalData() {
   }
 }
 loadHistoricalData();
+
+// DarriusAI Trend Line（原“变色龙”核心算法完整移植）
+function calculateDarriusAITrend(data) {
+  const period = 40;
+  const p = Math.floor(Math.sqrt(period));
+  
+  const wma = (arr, idx, len) => {
+    if (idx + len > arr.length) return arr[idx].close;
+    let sum = 0, weightSum = 0;
+    for (let i = 0; i < len; i++) {
+      const weight = len - i;
+      sum += arr[idx + i].close * weight;
+      weightSum += weight;
+    }
+    return sum / weightSum;
+  };
+  
+  const vect = [];
+  for (let i = 0; i < data.length; i++) {
+    vect[i] = 2 * wma(data, i, period/2) - wma(data, i, period);
+  }
+  
+  const ext = [];
+  for (let i = 0; i < data.length - p; i++) {
+    let sum = 0, weightSum = 0;
+    for (let j = 0; j < p; j++) {
+      const weight = p - j;
+      sum += vect[i + j] * weight;
+      weightSum += weight;
+    }
+    ext[i] = sum / weightSum;
+  }
+  
+  const upData = [], dnData = [];
+  let trend = 1;
+  for (let i = ext.length - 1; i >= 0; i--) {
+    if (i < ext.length - 1) {
+      if (ext[i] > ext[i+1]) trend = 1;
+      if (ext[i] < ext[i+1]) trend = -1;
+    }
+    
+    const time = data[i + p]?.time || data[i].time;
+    
+    if (trend > 0) {
+      upData.push({ time, value: ext[i] });
+      dnData.push({ time, value: NaN });
+      
+      // B 买点（粉色）
+      if (i < ext.length - 2 && ext[i] > ext[i+1] && ext[i+1] <= ext[i+2]) {
+        chart.addMarker({ time, position: 'belowBar', color: '#ff1493', shape: 'circle', text: 'B' });
+      }
+    } else {
+      dnData.push({ time, value: ext[i] });
+      upData.push({ time, value: NaN });
+      
+      // S 卖点（黄色）
+      if (i < ext.length - 2 && ext[i] < ext[i+1] && ext[i+1] >= ext[i+2]) {
+        chart.addMarker({ time, position: 'aboveBar', color: '#ffff00', shape: 'circle', text: 'S' });
+      }
+    }
+  }
+  
+  if (document.getElementById('showDarriusAI').checked) {
+    upSeries.setData(upData.filter(d => !isNaN(d.value)));
+    dnSeries.setData(dnData.filter(d => !isNaN(d.value)));
+  } else {
+    upSeries.setData([]);
+    dnSeries.setData([]);
+  }
+}
 
 function generateMockData() {
   const now = Math.floor(Date.now() / 1000);
@@ -271,6 +334,7 @@ function generateMockData() {
     data.push({ time, open, high, low, close });
   }
   candleSeries.setData(data);
+  calculateDarriusAITrend(data);
 }
 
 function changeSymbol(sym) {
@@ -279,6 +343,16 @@ function changeSymbol(sym) {
   document.getElementById('symbol').value = symbol;
   loadHistoricalData();
 }
+
+// 显示/隐藏 DarriusAI Trend Line
+document.getElementById('showDarriusAI').onchange = function() {
+  if (this.checked && candleSeries.data().length > 0) {
+    calculateDarriusAITrend(candleSeries.data());
+  } else {
+    upSeries.setData([]);
+    dnSeries.setData([]);
+  }
+};
 
 document.querySelectorAll('.tf-btn').forEach(b=>b.onclick=()=>{ 
   document.querySelector('.tf-btn.active')?.classList.remove('active'); 
