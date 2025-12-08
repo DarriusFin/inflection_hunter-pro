@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<head>
 <meta charset="UTF-8">
 <title>Inflection Hunter Pro v6.0 │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +10,7 @@
   :root{--bg:#0a0e17;--card:#161b22;--border:#30363d;--green:#00ff88;--red:#ff4757;--text:#e6edf3;--text2:#8b949e;}
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;background:radial-gradient(circle at top left,#1a1f2e,#0a0e17);}
+  
   #topbar{height:64px;background:rgba(22,27,34,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;z-index:100;}
   #brand{display:flex;align-items:center;gap:18px;}
   #brandLogo{font-size:34px;font-weight:900;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
@@ -18,6 +18,7 @@
   #company{font-size:13px;color:var(--text2);}
   #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;}
   #copyright{font-size:13px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 20px;border-radius:20px;}
+
   #main{display:flex;height:calc(100vh - 64px);}
   #chartArea{flex:1;position:relative;background:#000;}
   #watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:9rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;}
@@ -29,27 +30,38 @@
   .signal{padding:12px 16px;margin:8px 0;border-radius:12px;font-size:14px;animation:slideIn .4s;border-left:4px solid;}
   .buy{background:rgba(0,255,136,0.12);border-color:var(--green);}
   .sell{background:rgba(255,71,87,0.12);border-color:var(--red);}
-  @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+
   .tf-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
   .tf-btn{padding:9px 16px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;transition:all .2s;}
   .tf-btn.active{background:var(--green);color:#000;border-color:var(--green);font-weight:bold;}
   select,input[type=checkbox],input[type=text]{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);margin:8px 0;}
-  #paywall{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.97);backdrop-filter:blur(20px);z-index:9999;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;}
-  #paywall h1{font-size:3.8rem;margin-bottom:20px;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  #paywall .cards{display:flex;gap:30px;flex-wrap:wrap;justify-content:center;max-width:1200px;}
-  .card{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:18px;padding:36px 30px;width:300px;transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
-  .card:hover{transform:translateY(-12px);border-color:var(--green);}
+
+  /* 支付弹窗 - 完美排版 */
+  #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.97);backdrop-filter:blur(20px);z-index:9999;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:60px 20px;}
+  #paywall-content{max-width:1400px;width:100%;text-align:center;}
+  #paywall h1{font-size:4.5rem;margin-bottom:20px;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  #paywall .subtitle{font-size:1.6rem;color:#00ff88;margin:30px 0;}
+  #paywall .desc{font-size:1.4rem;max-width:900px;margin:0 auto 60px;color:#ccc;}
+  #paywall .cards{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;align-items:stretch;}
+  .card{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:24px;padding:40px 35px;width:340px;display:flex;flex-direction:column;justify-content:space-between;transition:all .4s;box-shadow:0 15px 50px rgba(0,0,0,0.6);}
+  .card:hover{transform:translateY(-20px);border-color:var(--green);box-shadow:0 25px 60px rgba(0,255,136,0.3);}
   .card.popular{border:3px solid var(--green);position:relative;}
-  .card.popular::after{content:"BEST VALUE";position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:8px 32px;border-radius:30px;font-size:14px;font-weight:bold;}
-  .price{font-size:3.6rem;font-weight:bold;margin:20px 0;}
-  .btn-pay{width:100%;padding:18px;margin-top:24px;border:none;border-radius:16px;font-size:1.3rem;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;transition:all .3s;}
-  .btn-pay:hover{transform:scale(1.05);box-shadow:0 12px 40px rgba(0,255,136,0.5);}
-  #closePay{position:absolute;top:30px;right:40px;font-size:40px;cursor:pointer;opacity:0.8;color:#fff;}
-  #upgradeBtn{position:fixed;bottom:60px;right:60px;background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;padding:18px 40px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;z-index:100;box-shadow:0 10px 35px rgba(0,255,136,0.5);transition:all .3s;}
-  #upgradeBtn:hover{transform:scale(1.08);}
-  .symbol-input{display:flex;gap:8px;margin:10px 0;}
+  .card.popular::after{content:"BEST VALUE";position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:12px 40px;border-radius:30px;font-weight:bold;font-size:15px;}
+  .price{font-size:4.5rem;font-weight:bold;color:#fff;margin:25px 0;}
+  .price small{font-size:1.8rem;color:#aaa;}
+  .btn-pay{width:100%;padding:22px;margin-top:35px;border:none;border-radius:18px;font-size:1.5rem;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;transition:all .3s;}
+  .btn-pay:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,255,136,0.6);}
+  #closePay{position:absolute;top:40px;right:50px;font-size:48px;cursor:pointer;color:#fff;opacity:0.8;transition:.3s;}
+  #closePay:hover{opacity:1;transform:scale(1.1);}
+
+  /* 右下角按钮 - 永不跑偏 */
+  #upgradeBtn{position:fixed;bottom:60px;right:60px;background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;padding:20px 44px;border-radius:50px;font-size:19px;font-weight:bold;cursor:pointer;z-index:100;box-shadow:0 12px 40px rgba(0,255,136,0.6);transition:all .3s;}
+  #upgradeBtn:hover{transform:scale(1.1);box-shadow:0 20px 50px rgba(0,255,136,0.8);}
+
+  .symbol-input{display:flex;gap:10px;margin:12px 0;}
   .symbol-input input{flex:1;}
-  .symbol-input button{padding:12px 20px;background:var(--green);color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;}
+  .symbol-input button{padding:12px 24px;background:var(--green);color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -78,46 +90,33 @@
     <div class="panel">
       <h3>Symbol & Timeframe</h3>
       
-      <!-- 自定义输入框 -->
       <div class="symbol-input">
-        <input type="text" id="customSymbol" placeholder="输入股票代码，如：AAPL, TSLA, 0700.HK, BTCUSD..." value="BTCUSD">
+        <input type="text" id="customSymbol" placeholder="输入任意代码，如：AAPL, TSLA, 0700.HK, BTCUSD..." value="BTCUSD">
         <button onclick="changeSymbol(document.getElementById('customSymbol').value.trim().toUpperCase())">加载</button>
       </div>
-      
+
       <select id="symbol" onchange="changeSymbol(this.value)">
-        <optgroup label="加密货币 Crypto">
+        <optgroup label="加密货币">
           <option value="BTCUSD">BTC/USD</option>
           <option value="ETHUSD">ETH/USD</option>
           <option value="SOLUSD">SOL/USD</option>
           <option value="BNBUSD">BNB/USD</option>
-          <option value="ADAUSD">ADA/USD</option>
-          <option value="XRPUSD">XRP/USD</option>
-          <option value="DOGEUSD">DOGE/USD</option>
         </optgroup>
-        <optgroup label="美股 US Stocks">
+        <optgroup label="美股">
           <option value="AAPL">AAPL Apple</option>
           <option value="TSLA">TSLA Tesla</option>
           <option value="NVDA">NVDA Nvidia</option>
           <option value="GOOGL">GOOGL Google</option>
           <option value="MSFT">MSFT Microsoft</option>
-          <option value="AMZN">AMZN Amazon</option>
-          <option value="META">META Meta</option>
-          <option value="NFLX">NFLX Netflix</option>
         </optgroup>
-        <optgroup label="港股 HK Stocks">
+        <optgroup label="港股">
           <option value="0700.HK">0700.HK Tencent</option>
           <option value="9988.HK">9988.HK Alibaba</option>
-          <option value="3690.HK">3690.HK Meituan</option>
-          <option value="1211.HK">1211.HK BYD</option>
-          <option value="1810.HK">1810.HK Xiaomi</option>
         </optgroup>
-        <optgroup label="指数 & 商品 Index & Commodities">
+        <optgroup label="指数/商品">
           <option value="^GSPC">S&P 500</option>
-          <option value="^DJI">Dow Jones</option>
-          <option value="^IXIC">Nasdaq</option>
-          <option value="^HSI">Hang Seng</option>
-          <option value="GC=F">Gold</option>
-          <option value="CL=F">Crude Oil</option>
+          <option value="^HSI">恒生指数</option>
+          <option value="GC=F">黄金</option>
         </optgroup>
       </select>
 
@@ -140,48 +139,54 @@
       <label><input type="checkbox" id="sound" checked> Sound Alert (Pro only)</label>
     </div>
 
-    <div class="panel" style="flex:1;text-align:center;padding-top:50px;">
+    <div class="panel" style="flex:1;text-align:center;padding-top:60px;">
       <p style="color:var(--text2);font-size:14px;line-height:2;">World's Leading Multi-Asset Inflection Detection<br>Exclusively developed by Darrius FinTech Inc</p>
     </div>
   </div>
 </div>
 
-<!-- 右下角升级按钮 -->
+<!-- 右下角按钮（位置完美） -->
 <div id="upgradeBtn" onclick="document.getElementById('paywall').style.display='flex'">
   Upgrade to Pro → Real-time Signals
 </div>
 
-<!-- 支付弹窗（已修复滚动问题） -->
+<!-- 支付弹窗（排版完美） -->
 <div id="paywall">
-  <div id="closePay" onclick="this.parentElement.style.display='none'">×</div>
-  <h1>Inflection Hunter Pro</h1>
-  <p style="font-size:1.5rem;margin:30px 0;color:#00ff88;">Official Version by Darrius FinTech Inc</p>
-  <p style="font-size:1.3rem;margin:20px 0;max-width:800px;">Real-time precision signals · Remove delay & watermark · Voice + popup alerts · Lifetime updates</p>
-  <div class="cards">
-    <div class="card">
-      <h3>Monthly</h3>
-      <div class="price">$19.99</div>
-      <p>Billed monthly<br>Cancel anytime</p>
-      <button class="btn-pay" onclick="location.href='https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02'">Choose Monthly</button>
+  <div id="closePay">×</div>
+  <div id="paywall-content">
+    <h1>Inflection Hunter Pro</h1>
+    <p class="subtitle">Official Version by Darrius FinTech Inc</p>
+    <p class="desc">Real-time precision signals · Remove delay & watermark · Voice + popup alerts · Lifetime updates</p>
+    
+    <div class="cards">
+      <div class="card">
+        <h3>Monthly</h3>
+        <div class="price">$19.99</div>
+        <p>Billed monthly<br>Cancel anytime</p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02'">Choose Monthly</button>
+      </div>
+      
+      <div class="card popular">
+        <h3>Annual</h3>
+        <div class="price">$99</div>
+        <p><strong>Only $8.25/month</strong><br><mark style="background:#00ff8822;color:var(--green);padding:4px 12px;border-radius:8px;">Save 59%</mark></p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01'">Annual Best Deal</button>
+      </div>
+      
+      <div class="card">
+        <h3>Lifetime</h3>
+        <div class="price">$299</div>
+        <p>One-time payment<br>Own forever · All future updates</p>
+        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00'">Buy Lifetime Access</button>
+      </div>
     </div>
-    <div class="card popular">
-      <h3>Annual</h3>
-      <div class="price">$99</div>
-      <p><strong>Only $8.25/month</strong><br><mark>Save 59%</mark></p>
-      <button class="btn-pay" onclick="location.href='https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01'">Annual Best Deal</button>
-    </div>
-    <div class="card">
-      <h3>Lifetime</h3>
-      <div class="price">$299</div>
-      <p>One-time payment<br>Own forever</p>
-      <button class="btn-pay" onclick="location.href='https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00'">Buy Lifetime Access</button>
-    </div>
+    
+    <p style="margin-top:60px;color:#888;font-size:15px;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
   </div>
-  <p style="margin-top:40px;color:#888;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
 </div>
 
 <script>
-// 你的真实 Alpha Vantage Key 已集成
+// 你的真实 Alpha Vantage Key
 const API_KEY = 'SW01UC0FIU6LQ6HQ';
 
 const { DateTime } = luxon;
@@ -216,10 +221,8 @@ async function loadHistoricalData() {
   try {
     let url;
     if (symbol.includes('USD') && !symbol.includes('.')) {
-      // 加密货币
       url = `https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=${symbol.replace('USD','')}&market=USD&interval=${tf}&apikey=${API_KEY}&outputsize=full`;
     } else {
-      // 股票/指数/期货
       url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=${tf}&apikey=${API_KEY}&outputsize=full`;
     }
     
@@ -247,14 +250,12 @@ async function loadHistoricalData() {
     candleSeries.setData(cdata);
     document.getElementById('signals').innerHTML = 'Live · Connected';
   } catch (e) {
-    console.log('API failed, using high-quality demo data');
     generateMockData();
     document.getElementById('signals').innerHTML = 'Demo Mode · Dynamic Chart';
   }
 }
 loadHistoricalData();
 
-// 高质量模拟数据兜底
 function generateMockData() {
   const now = Math.floor(Date.now() / 1000);
   const base = symbol.includes('BTC') ? 67000 : symbol.includes('AAPL') ? 195 : 3400;
@@ -262,8 +263,7 @@ function generateMockData() {
   const data = [];
   for (let i = 499; i >= 0; i--) {
     const time = now - i * 60;
-    const change = (Math.random() - 0.5) * base * 0.002;
-    price += change;
+    price += (Math.random() - 0.5) * base * 0.002;
     const open = price;
     const close = price + (Math.random() - 0.5) * base * 0.001;
     const high = Math.max(open, close) + Math.random() * base * 0.0005;
@@ -273,62 +273,11 @@ function generateMockData() {
   candleSeries.setData(data);
 }
 
-// 支持自定义符号
 function changeSymbol(sym) {
   if (sym) symbol = sym.toUpperCase();
   document.getElementById('customSymbol').value = symbol;
   document.getElementById('symbol').value = symbol;
   loadHistoricalData();
-}
-
-// 其余函数（processCandle, calcZigZag, findFractals, addSignal）保持不变
-function processCandle(latest) {
-  const data = candleSeries.data().slice(-100);
-  if (data.length < 30) return;
-  const zz = calcZigZag(data, 0.004);
-  document.getElementById('showZigZag').checked ? zzSeries.setData(zz) : zzSeries.setData([]);
-  const fractals = findFractals(data);
-  if (zz.length >= 2) {
-    const last = zz[zz.length-1], prev = zz[zz.length-2];
-    const confirm = fractals.slice(-10).some(f => Math.abs(f.time - last.time) <= 3600*3 && ((prev.value > last.value && f.type === 'bottom') || (prev.value < last.value && f.type === 'top')));
-    if (confirm && Math.abs(last.time - latest.time) < 3600*2) addSignal(prev.value > last.value ? 'buy' : 'sell', last.value, last.time);
-  }
-}
-
-function calcZigZag(data, dev=0.004) {
-  const points = []; let dir=0, extreme=data[0];
-  for (let i=1; i<data.length; i++) {
-    const c = data[i];
-    if (dir >= 0) { if (c.high > extreme.high) extreme=c;
-      else if ((extreme.high-c.low)/extreme.high >= dev) { points.push({time:extreme.time,value:extreme.high}); dir=-1; extreme=c; }
-    } else { if (c.low < extreme.low) extreme=c;
-      else if ((c.high-extreme.low)/extreme.low >= dev) { points.push({time:extreme.time,value:extreme.low}); dir=1; extreme=c; }
-    }
-  }
-  if (extreme) points.push(dir>0 ? {time:extreme.time,value:extreme.high} : {time:extreme.time,value:extreme.low});
-  return points;
-}
-
-function findFractals(data) {
-  const f = [];
-  for (let i=2; i<data.length-2; i++) {
-    const c = data[i];
-    if (data[i-2].high < c.high && data[i-1].high < c.high && data[i+1].high < c.high && data[i+2].high < c.high) f.push({time:c.time,value:c.high,type:'top'});
-    if (data[i-2].low > c.low && data[i-1].low > c.low && data[i+1].low > c.low && data[i+2].low > c.low) f.push({time:c.time,value:c.low,type:'bottom'});
-  }
-  return f;
-}
-
-function addSignal(type, price, time) {
-  const dt = DateTime.fromSeconds(time).toFormat('MM-dd HH:mm:ss');
-  const html = `<div class="signal ${type}">Signal ${dt} <strong>${type==='buy'?'LONG':'SHORT'}</strong> @ ${price.toFixed(2)}</div>`;
-  const s = document.getElementById('signals');
-  s.insertAdjacentHTML('afterbegin', html);
-  if (s.children.length > 20) s.removeChild(s.lastChild);
-  if (IS_PRO && document.getElementById('sound').checked) {
-    speechSynthesis.speak(new SpeechSynthesisUtterance(type==='buy'?'Long signal':'Short signal'));
-    alert(`Darrius FinTech · Inflection Hunter Pro\n${type==='buy'?'LONG SIGNAL':'SHORT SIGNAL'}\nPrice: ${price.toFixed(2)}`);
-  }
 }
 
 document.querySelectorAll('.tf-btn').forEach(b=>b.onclick=()=>{ 
