@@ -2,96 +2,160 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Inflection Hunter Pro v6.0 │ Darrius FinTech Inc</title>
+<title>Inflection Hunter Pro v6.2 │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
 <style>
-  :root{--bg:#0a0e17;--card:#161b22;--border:#30363d;--green:#00ff88;--red:#ff4757;--text:#e6edf3;--text2:#8b949e;}
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;background:radial-gradient(circle at top left,#1a1f2e,#0a0e17);}
-  
-  #topbar{height:64px;background:rgba(22,27,34,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;z-index:100;}
-  #brand{display:flex;align-items:center;gap:18px;}
-  #brandLogo{font-size:34px;font-weight:900;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  #brandName{font-size:22px;font-weight:800;}
-  #company{font-size:13px;color:var(--text2);}
-  #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;}
-  #copyright{font-size:13px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 20px;border-radius:20px;}
-  
-  #main{display:flex;height:calc(100vh - 64px);}
-  #chartArea{flex:1;position:relative;background:#0d1117;} /* 深空灰背景 */
-  #watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:9rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;}
-  
-  #sidebar{width:390px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;}
-  .panel{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:22px;}
-  .panel h3{color:var(--green);font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-  .panel h3::before{content:"◆";font-size:12px;}
-  
-  #signals{max-height:380px;overflow-y:auto;}
-  .signal{padding:12px 16px;margin:8px 0;border-radius:12px;font-size:14px;animation:slideIn .4s;border-left:4px solid;}
-  .buy{background:rgba(0,255,136,0.12);border-color:var(--green);}
-  .sell{background:rgba(255,71,87,0.12);border-color:var(--red);}
-  @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
-  
-  .tf-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
-  .tf-btn{padding:9px 16px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;transition:all .2s;}
-  .tf-btn.active{background:var(--green);color:#000;border-color:var(--green);font-weight:bold;}
-  
-  select,input[type=checkbox],input[type=text]{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);margin:8px 0;}
-  
-  .symbol-input{display:flex;gap:10px;margin:12px 0;}
-  .symbol-input input{flex:1;}
-  .symbol-input button{padding:12px 28px;background:var(--green);color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:14px;}
-  
-  /* 右下角按钮 - 永不跑偏 */
-  #upgradeBtn{
-    position:fixed !important;
-    bottom:40px !important;
-    right:40px !important;
-    background:linear-gradient(135deg,#00ff88,#00d4ff);
-    color:#000;
-    padding:14px 28px !important;
-    border-radius:50px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-    z-index:99999 !important;
-    box-shadow:0 10px 30px rgba(0,255,136,0.6);
-    transition:all .3s;
+  :root{
+    --bg:#0a0e17;--card:#161b22;--border:#30363d;
+    --green:#00ff88;--red:#ff4757;--text:#e6edf3;--text2:#8b949e;
+    --cyan:#00d4ff;--amber:#ffaa00;
   }
-  #upgradeBtn:hover{transform:scale(1.08);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:radial-gradient(circle at top left,#1a1f2e,#0a0e17);
+    color:var(--text);height:100vh;overflow:hidden;
+  }
 
-  /* 支付弹窗 */
-  #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.97);backdrop-filter:blur(20px);z-index:99999;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:60px 20px;}
-  #paywall-content{max-width:1400px;width:100%;text-align:center;}
-  #paywall h1{font-size:4.5rem;margin-bottom:20px;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  #paywall .subtitle{font-size:1.6rem;color:#00ff88;margin:30px 0;}
-  #paywall .desc{font-size:1.4rem;max-width:900px;margin:0 auto 60px;color:#ccc;}
-  #paywall .cards{display:flex;gap:50px;justify-content:center;flex-wrap:wrap;align-items:stretch;}
-  .card{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:24px;padding:40px 35px;width:340px;display:flex;flex-direction:column;justify-content:space-between;transition:all .4s;box-shadow:0 15px 50px rgba(0,0,0,0.6);}
-  .card:hover{transform:translateY(-20px);border-color:var(--green);}
-  .card.popular{border:3px solid var(--green);position:relative;}
-  .card.popular::after{content:"BEST VALUE";position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:12px 40px;border-radius:30px;font-weight:bold;font-size:15px;}
-  .price{font-size:4.5rem;font-weight:bold;color:#fff;margin:25px 0;}
-  .btn-pay{width:100%;padding:22px;margin-top:35px;border:none;border-radius:18px;font-size:1.5rem;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;transition:all .3s;}
-  .btn-pay:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,255,136,0.6);}
-  #closePay{position:absolute;top:40px;right:50px;font-size:48px;cursor:pointer;color:#fff;opacity:0.8;transition:.3s;}
-  #closePay:hover{opacity:1;transform:scale(1.1);}
+  #topbar{
+    height:64px;background:rgba(22,27,34,0.98);backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:100;
+  }
+  #brand{display:flex;align-items:center;gap:14px;}
+  #brandLogo{font-size:28px;font-weight:900;background:linear-gradient(90deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  #brandName{font-size:18px;font-weight:900;}
+  #company{font-size:12px;color:var(--text2);}
+  #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;}
+
+  .top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .btn{
+    padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06);color:#fff;cursor:pointer;font-weight:800;font-size:12px;
+    transition:transform .15s, background .15s, border-color .15s;
+  }
+  .btn:hover{transform:translateY(-1px);border-color:rgba(0,255,136,.45);}
+  .btn.primary{border:none;color:#000;background:linear-gradient(135deg,var(--green),var(--cyan));}
+  .btn.ghost{background:transparent;border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.85);}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none;}
+
+  #copyright{font-size:12px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:20px;}
+
+  #main{display:flex;height:calc(100vh - 64px);}
+  #chartArea{flex:1;position:relative;background:#0d1117;}
+  #chartContainer{width:100%;height:100%;}
+  #watermark{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);
+    font-size:8rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;
+  }
+
+  #sidebar{width:420px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .panel{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:16px 18px;}
+  .panel h3{color:var(--green);font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .panel h3::before{content:"◆";font-size:11px;}
+
+  #signals{max-height:250px;overflow-y:auto;padding-right:4px;}
+  .signal{padding:12px 14px;margin:10px 0;border-radius:14px;font-size:13px;animation:slideIn .3s;border-left:4px solid;}
+  .buy{background:rgba(0,255,136,0.10);border-color:var(--green);}
+  .sell{background:rgba(255,71,87,0.10);border-color:var(--red);}
+  @keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  .tf-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .tf-btn{
+    padding:8px 10px;background:rgba(255,255,255,0.08);
+    border:1px solid var(--border);border-radius:10px;font-size:12px;cursor:pointer;transition:all .2s;
+  }
+  .tf-btn.active{background:var(--green);color:#000;border-color:var(--green);font-weight:900;}
+
+  select,input[type=checkbox],input[type=text],input[type=email],input[type=date]{
+    width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);border-radius:12px;color:var(--text);margin:8px 0;
+  }
+  input::placeholder{color:rgba(230,237,243,.45)}
+  .symbol-input{display:flex;gap:10px;margin:10px 0;}
+  .symbol-input input{flex:1;margin:0;}
+  .symbol-input button{padding:10px 14px;background:var(--green);color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;}
+  .row{display:flex;gap:10px;align-items:center;}
+  .row > *{flex:1;}
+  .small{font-size:12px;color:var(--text2);line-height:1.6;}
+
+  #upgradeBtn{
+    position:fixed;bottom:28px;right:28px;
+    background:linear-gradient(135deg,var(--green),var(--cyan));
+    color:#000;padding:14px 22px;border-radius:50px;
+    font-size:15px;font-weight:900;cursor:pointer;
+    z-index:99999;box-shadow:0 10px 30px rgba(0,255,136,0.45);transition:transform .2s;
+  }
+  #upgradeBtn:hover{transform:scale(1.06);}
+
+  /* Paywall */
+  #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.97);backdrop-filter:blur(20px);
+    z-index:99999;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:56px 18px;}
+  #paywall-content{max-width:1220px;width:100%;text-align:center;}
+  #paywall h1{font-size:3.3rem;margin-bottom:14px;background:linear-gradient(90deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  #paywall .subtitle{font-size:1.05rem;color:var(--green);margin:14px 0;}
+  #paywall .desc{font-size:1.02rem;max-width:900px;margin:0 auto 34px;color:#cfcfcf;line-height:1.65;}
+  #paywall .cards{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;align-items:stretch;}
+  .card{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:22px;padding:22px 20px;width:270px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .25s,border-color .25s;box-shadow:0 15px 45px rgba(0,0,0,0.55);}
+  .card:hover{transform:translateY(-8px);border-color:rgba(0,255,136,.6);}
+  .card.popular{border:2px solid var(--green);position:relative;}
+  .card.popular::after{content:"BEST VALUE";position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:8px 20px;border-radius:30px;font-weight:900;font-size:12px;}
+  .price{font-size:2.7rem;font-weight:900;color:#fff;margin:14px 0;}
+  .btn-pay{width:100%;padding:14px;margin-top:14px;border:none;border-radius:16px;font-size:1rem;font-weight:900;cursor:pointer;background:linear-gradient(90deg,var(--green),var(--cyan));color:#000;transition:transform .2s, box-shadow .2s;}
+  .btn-pay:hover{transform:scale(1.03);box-shadow:0 14px 34px rgba(0,255,136,0.35);}
+  #closePay{position:absolute;top:18px;right:22px;font-size:42px;cursor:pointer;color:#fff;opacity:0.8;transition:.2s;}
+  #closePay:hover{opacity:1;transform:scale(1.06);}
+
+  /* Modals */
+  #authModal,#affModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);z-index:999999;}
+  .modal-card{width:min(820px,94vw);max-height:86vh;overflow:auto;background:rgba(22,27,34,.98);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:18px;}
+  .modal-title{font-weight:900;font-size:16px;margin-bottom:10px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;position:sticky;bottom:0;padding-top:10px;background:linear-gradient(180deg, rgba(22,27,34,0), rgba(22,27,34,.98) 30%);}
+
+  table{width:100%;border-collapse:separate;border-spacing:0 8px;}
+  td,th{font-size:12px;text-align:left;padding:10px 12px;}
+  th{color:rgba(230,237,243,.8);}
+  .tr{
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:14px;
+  }
+  .tr td:first-child{border-top-left-radius:14px;border-bottom-left-radius:14px;}
+  .tr td:last-child{border-top-right-radius:14px;border-bottom-right-radius:14px;}
+  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:12px;}
+  .pill.green{background:rgba(0,255,136,.12);border-color:rgba(0,255,136,.25);color:rgba(0,255,136,.95)}
+  .pill.red{background:rgba(255,71,87,.12);border-color:rgba(255,71,87,.25);color:rgba(255,71,87,.95)}
+
+  @media (max-width: 920px){
+    #main{flex-direction:column;}
+    #sidebar{width:100%;height:48vh;}
+    #chartArea{height:52vh;}
+    #upgradeBtn{right:16px;bottom:16px;}
+  }
 </style>
 </head>
+
 <body>
 
 <div id="topbar">
   <div id="brand">
     <div id="brandLogo">Inflection Hunter</div>
     <div>
-      <div id="brandName">Inflection Hunter Pro</div>
+      <div id="brandName">Inflection Hunter Pro <span style="opacity:.65;font-weight:900;">v6.2</span></div>
       <div id="company">Darrius FinTech Inc</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:20px;">
+
+  <div class="top-actions">
     <div id="status">Free Version · 60s Signal Delay</div>
+
+    <button class="btn ghost" id="btnSignIn">Sign In</button>
+    <button class="btn ghost" id="btnLogout" style="display:none;">Logout</button>
+
+    <button class="btn" id="btnPortal" style="display:none;">Manage / Cancel Subscription</button>
+    <button class="btn" id="btnAffiliate" style="display:none;">Affiliate Dashboard</button>
+
     <div id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</div>
   </div>
 </div>
@@ -103,15 +167,16 @@
   </div>
 
   <div id="sidebar">
+
     <div class="panel">
       <h3>Symbol & Timeframe</h3>
-      
+
       <div class="symbol-input">
-        <input type="text" id="customSymbol" placeholder="Enter symbol, e.g., AAPL, TSLA, 0700.HK, BTC-USD..." value="BTC-USD">
-        <button onclick="changeSymbol(document.getElementById('customSymbol').value.trim().toUpperCase())">Load</button>
+        <input type="text" id="customSymbol" placeholder="Enter symbol, e.g., AAPL, EURUSD, XAUUSD, BTC-USD..." value="BTC-USD">
+        <button id="btnLoadSymbol">Load</button>
       </div>
 
-      <select id="symbol" onchange="changeSymbol(this.value)">
+      <select id="symbolSelect">
         <optgroup label="Crypto">
           <option value="BTC-USD">BTC/USD</option>
           <option value="ETH-USD">ETH/USD</option>
@@ -122,8 +187,17 @@
           <option value="TSLA">TSLA Tesla</option>
           <option value="NVDA">NVDA Nvidia</option>
           <option value="MSFT">MSFT Microsoft</option>
+          <option value="SPY">SPY (S&P 500 ETF)</option>
+          <option value="QQQ">QQQ (Nasdaq 100 ETF)</option>
         </optgroup>
-        <optgroup label="HK Stocks">
+        <optgroup label="FX & Metals (Polygon)">
+          <option value="EURUSD">EURUSD</option>
+          <option value="GBPUSD">GBPUSD</option>
+          <option value="USDJPY">USDJPY</option>
+          <option value="XAUUSD">XAUUSD Gold</option>
+          <option value="XAGUSD">XAGUSD Silver</option>
+        </optgroup>
+        <optgroup label="HK Stocks (future)">
           <option value="0700.HK">0700.HK Tencent</option>
           <option value="9988.HK">9988.HK Alibaba</option>
         </optgroup>
@@ -137,241 +211,892 @@
         <button class="tf-btn" data-tf="1D">1day</button>
         <button class="tf-btn" data-tf="1W">1week</button>
         <button class="tf-btn" data-tf="1M">1month</button>
-        <button class="tf-btn" data-tf="1Y">1year</button>
+      </div>
+
+      <div class="small">
+        EN: Indices usually use ETFs (SPY/QQQ) unless provider offers index feeds.<br>
+        中文：指数通常用 ETF（SPY/QQQ）替代，除非数据源提供指数K线。
       </div>
     </div>
 
     <div class="panel">
       <h3>Live Signals</h3>
-      <div id="signals">Loading real-time data...</div>
+      <div id="signals">Loading...</div>
+    </div>
+
+    <div class="panel">
+      <h3>Risk Copilot</h3>
+
+      <div class="row">
+        <button class="btn" id="btnComputeRisk">Compute Risk</button>
+        <button class="btn" id="btnClearRisk">Clear</button>
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <button class="btn" id="btnExportPng">Export PNG</button>
+        <button class="btn" id="btnShareLink">Share Link</button>
+      </div>
+
+      <label style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+        <input type="checkbox" id="pinRiskLines" style="width:auto;margin:0;">
+        <span style="font-size:13px;">
+          <b>Pin Risk Lines</b> <span style="color:var(--text2);">(Pro only · localStorage)</span>
+        </span>
+      </label>
+
+      <div id="riskBox" style="margin-top:10px;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);">
+        <div style="font-weight:900;margin-bottom:8px;">Risk Summary</div>
+        <div class="small" id="riskSummary">
+          EN: Click “Compute Risk” to generate Entry/Stop/TP and draw risk lines on chart.<br>
+          中文：点击“Compute Risk”生成入场/止损/止盈并绘制风险线。
+        </div>
+      </div>
+
+      <div class="small" style="margin-top:10px;">
+        EN: Risk is computed by backend for consistency (harder to tamper).<br>
+        中文：风险由后端计算以确保一致性（更难被篡改）。
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Email Alerts <span style="color:var(--text2);font-weight:800;">(Pro only)</span></h3>
+
+      <input type="email" id="alertEmail" placeholder="Your email for alerts (e.g., you@gmail.com)">
+
+      <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px;flex:1;">
+          <input type="checkbox" id="alertSideB" style="width:auto;margin:0;" checked>
+          <span>BUY / 买入</span>
+        </label>
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px;flex:1;">
+          <input type="checkbox" id="alertSideS" style="width:auto;margin:0;" checked>
+          <span>SELL / 卖出</span>
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:6px;">
+        <button class="btn" id="btnSaveAlert">Save Alert</button>
+        <button class="btn" id="btnRefreshAlerts">Refresh</button>
+      </div>
+
+      <div class="small" style="margin-top:8px;" id="alertsHint">
+        EN: Pro users receive alerts only for NEW signals (deduped).<br>
+        中文：Pro 用户只会收到“新信号”提醒（已去重）。
+      </div>
+
+      <div id="alertsList" style="margin-top:10px;max-height:120px;overflow:auto;"></div>
     </div>
 
     <div class="panel">
       <h3>Settings</h3>
-      <label><input type="checkbox" id="showZigZag" checked> Show ZigZag Line</label><br><br>
-      <label><input type="checkbox" id="showDarriusAI" checked> Show DarriusAI Trend Line</label><br><br>
-      <label><input type="checkbox" id="sound" checked> Sound Alert (Pro only)</label>
+      <label style="display:flex;gap:10px;align-items:center;">
+        <input type="checkbox" id="showDarriusAI" checked style="width:auto;margin:0;">
+        <span>Show DarriusAI Trend Line</span>
+      </label>
+      <label style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+        <input type="checkbox" id="sound" checked style="width:auto;margin:0;">
+        <span>Sound Alert (Pro only)</span>
+      </label>
+      <div class="small" style="margin-top:8px;">
+        EN: Free delay enforced by backend. Front-end cannot bypass.<br>
+        中文：免费延迟由后端强制执行，前端无法绕过。
+      </div>
     </div>
 
-    <div class="panel" style="flex:1;text-align:center;padding-top:60px;">
-      <p style="color:var(--text2);font-size:14px;line-height:2;">World's Leading Multi-Asset Inflection Detection<br>Exclusively developed by Darrius FinTech Inc</p>
+    <div class="panel" style="flex:1;text-align:center;padding-top:18px;">
+      <p style="color:var(--text2);font-size:13px;line-height:1.9;">
+        World's Leading Multi-Asset Inflection Detection<br>
+        Exclusively developed by Darrius FinTech Inc
+      </p>
     </div>
   </div>
 </div>
 
-<!-- 升级按钮 -->
-<div id="upgradeBtn" onclick="document.getElementById('paywall').style.display='flex'">
-  Upgrade to Pro → Real-time Signals
-</div>
+<div id="upgradeBtn">Upgrade to Pro → Real-time Signals</div>
 
-<!-- 支付弹窗 -->
+<!-- Paywall -->
 <div id="paywall">
-  <div id="closePay" onclick="this.parentElement.style.display='none'">×</div>
+  <div id="closePay">×</div>
   <div id="paywall-content">
     <h1>Inflection Hunter Pro</h1>
     <p class="subtitle">Official Version by Darrius FinTech Inc</p>
-    <p class="desc">Real-time precision signals · Remove delay & watermark · Voice + popup alerts · Lifetime updates</p>
-    
+    <p class="desc">
+      Real-time precision signals · Remove delay & watermark · Voice + popup alerts · Risk Copilot · Share snapshots<br>
+      <b>7-day free trial</b> for subscription plans (auto-bills unless canceled in Stripe portal).
+    </p>
+
     <div class="cards">
+      <div class="card">
+        <h3>Half-Monthly</h3>
+        <div class="price">$9.9</div>
+        <p>7-day free trial<br>Auto-bills every 2 weeks</p>
+        <button class="btn-pay" id="btnPayHalfMonthly">Start Trial</button>
+      </div>
+
       <div class="card">
         <h3>Monthly</h3>
         <div class="price">$19.99</div>
-        <p>Billed monthly<br>Cancel anytime</p>
-        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02'">Choose Monthly</button>
+        <p>7-day free trial<br>Cancel anytime</p>
+        <button class="btn-pay" id="btnPayMonthly">Start Trial</button>
       </div>
+
       <div class="card popular">
         <h3>Annual</h3>
         <div class="price">$99</div>
-        <p><strong>Only $8.25/month</strong><br><mark>Save 59%</mark></p>
-        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01'">Annual Best Deal</button>
+        <p><strong>Only $8.25/month</strong><br><mark>Save big</mark></p>
+        <button class="btn-pay" id="btnPayAnnual">Best Deal</button>
       </div>
+
       <div class="card">
         <h3>Lifetime</h3>
         <div class="price">$299</div>
         <p>One-time payment<br>Own forever</p>
-        <button class="btn-pay" onclick="location.href='https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00'">Buy Lifetime Access</button>
+        <button class="btn-pay" id="btnPayLifetime">Buy Lifetime</button>
       </div>
     </div>
-    <p style="margin-top:60px;color:#888;font-size:15px;">Refresh page after payment to unlock permanently · Secured by Stripe</p>
+
+    <p style="margin-top:26px;color:#9a9a9a;font-size:14px;line-height:1.6;">
+      After payment, your Pro status unlocks via secure Stripe webhooks.<br>
+      Use “Manage / Cancel Subscription” for cancellation & invoices.
+    </p>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div id="authModal">
+  <div class="modal-card" style="width:min(520px,92vw);">
+    <div class="modal-title">Sign In (Magic Link)</div>
+    <div class="small" style="margin-bottom:8px;">
+      EN: Enter your email and we will send you a sign-in link.<br>
+      中文：输入邮箱，我们会发送登录链接。
+    </div>
+    <input type="email" id="authEmail" placeholder="you@example.com">
+    <div class="modal-actions">
+      <button class="btn" id="btnAuthCancel">Cancel</button>
+      <button class="btn primary" id="btnAuthSend">Send Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Affiliate Dashboard Modal (Admin only) -->
+<div id="affModal">
+  <div class="modal-card">
+    <div class="modal-title">Affiliate Dashboard (Admin)</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+      <div>
+        <div class="small">From (date)</div>
+        <input type="date" id="affFrom">
+      </div>
+      <div>
+        <div class="small">To (date)</div>
+        <input type="date" id="affTo">
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="btnAffLoad">Load</button>
+      <button class="btn" id="btnAffCsv">Export CSV</button>
+    </div>
+
+    <div style="margin-top:12px;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);">
+      <div style="font-weight:900;margin-bottom:6px;">Generate Partner Link</div>
+      <div class="small">EN: Give partners a unique ref code. 中文：给推广者一个唯一 ref 码。</div>
+      <div class="row" style="margin-top:8px;">
+        <input type="text" id="affRef" placeholder="e.g., AFF_A001" style="margin:0;">
+        <button class="btn primary" id="btnAffCopy">Copy Link</button>
+      </div>
+      <div class="small" id="affLinkText" style="margin-top:8px;"></div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <span class="pill">Total Payments: <b id="affTotalPay">0</b></span>
+        <span class="pill green">Total USD: <b id="affTotalUsd">0.00</b></span>
+        <span class="pill red">Commission 20%: <b id="affTotalComm">0.00</b></span>
+      </div>
+
+      <div style="margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Payments</th>
+              <th>Total (USD)</th>
+              <th>Commission 20%</th>
+            </tr>
+          </thead>
+          <tbody id="affTable"></tbody>
+        </table>
+        <div class="small" id="affEmptyHint" style="display:none;">
+          EN: No affiliate payments in this window.<br>
+          中文：该时间范围内暂无推广入账记录。
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" id="btnAffClose">Close</button>
+    </div>
   </div>
 </div>
 
 <script>
-// 你的 Alpha Vantage Key
-const API_KEY = 'SW01UC0FIU6LQ6HQ';
+/** ===== Config ===== */
+const API_BASE = ""; // same domain => ""; cross domain => "http://localhost:3000"
+const LOCAL_PIN_KEY = (sym, tf) => `ih_pin_risk:${sym}:${tf}`;
 
-const IS_PRO = localStorage.getItem('inflection_pro') === 'forever' || new Date(localStorage.getItem('inflection_expiry') || 0) > new Date();
-if (IS_PRO) {
-  document.getElementById('watermark').style.display = 'none';
-  document.getElementById('status').innerHTML = 'Pro Activated · Real-time';
-  document.getElementById('status').style.background = 'linear-gradient(90deg,#00ff88,#00d4ff)';
-  document.getElementById('status').style.color = '#000';
-  document.getElementById('upgradeBtn').style.display = 'none';
+// put real Stripe price IDs:
+const STRIPE_PRICE_HALFMONTHLY = "price_9.9";
+const STRIPE_PRICE_MONTHLY = "price_19.99";
+const STRIPE_PRICE_ANNUAL = "price_99";
+const STRIPE_PRICE_LIFETIME = "price_299";
+
+/** ===== Toast + Overlay ===== */
+function toastBilingual(en, zh, type="info"){
+  const id="ih-toast";
+  let box=document.getElementById(id);
+  if(!box){
+    box=document.createElement("div");
+    box.id=id; box.style.position="fixed"; box.style.top="84px"; box.style.right="18px";
+    box.style.zIndex="999999"; box.style.maxWidth="420px"; document.body.appendChild(box);
+  }
+  const item=document.createElement("div");
+  item.style.marginBottom="10px"; item.style.padding="12px 14px"; item.style.borderRadius="14px";
+  item.style.border="1px solid rgba(255,255,255,.15)";
+  item.style.background="rgba(0,0,0,.65)"; item.style.backdropFilter="blur(10px)";
+  item.style.boxShadow="0 10px 30px rgba(0,0,0,.5)";
+  item.style.fontSize="13px"; item.style.lineHeight="1.55";
+  if(type==="error") item.style.borderColor="rgba(255,71,87,.65)";
+  if(type==="success") item.style.borderColor="rgba(0,255,136,.65)";
+  item.innerHTML=`<div style="font-weight:900;margin-bottom:6px;">${type==="error"?"Error":"Notice"}</div>
+    <div><b>EN:</b> ${en}</div><div style="margin-top:4px;"><b>中文:</b> ${zh}</div>`;
+  box.appendChild(item);
+  setTimeout(()=>item.remove(),5200);
+}
+function setChartOverlay(msgEN,msgZH){
+  const id="ih-overlay";
+  let ov=document.getElementById(id);
+  if(!ov){
+    ov=document.createElement("div");
+    ov.id=id;
+    ov.style.position="absolute";ov.style.left="50%";ov.style.top="50%";
+    ov.style.transform="translate(-50%,-50%)";
+    ov.style.zIndex="8";ov.style.padding="18px 20px";ov.style.borderRadius="18px";
+    ov.style.border="1px solid rgba(255,255,255,.16)";
+    ov.style.background="rgba(0,0,0,.55)";ov.style.backdropFilter="blur(14px)";
+    ov.style.maxWidth="560px";ov.style.textAlign="center";ov.style.color="rgba(255,255,255,.92)";
+    ov.style.lineHeight="1.7";ov.style.fontSize="14px";
+    document.getElementById("chartArea").appendChild(ov);
+  }
+  ov.innerHTML=`<div style="font-weight:900;margin-bottom:10px;">Data Not Available</div>
+    <div><b>EN:</b> ${msgEN}</div><div style="margin-top:6px;"><b>中文:</b> ${msgZH}</div>`;
+  ov.style.display="block";
+}
+function clearChartOverlay(){ const ov=document.getElementById("ih-overlay"); if(ov) ov.style.display="none"; }
+
+/** ===== API ===== */
+async function apiGetMe(){ return (await fetch(`${API_BASE}/api/me`,{credentials:"include"})).json(); }
+async function apiCheckout(priceId, ref){
+  return (await fetch(`${API_BASE}/api/checkout`,{
+    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
+    body:JSON.stringify({priceId,ref})
+  })).json();
+}
+async function apiPortal(){
+  return (await fetch(`${API_BASE}/api/billing/portal`,{
+    method:"POST",headers:{"content-type":"application/json"},credentials:"include"
+  })).json();
+}
+async function apiBars(sym,tf){
+  return (await fetch(`${API_BASE}/api/bars?symbol=${encodeURIComponent(sym)}&tf=${encodeURIComponent(tf)}&limit=800`,{credentials:"include"})).json();
+}
+async function apiSignals(sym,tf){
+  return (await fetch(`${API_BASE}/api/signals?symbol=${encodeURIComponent(sym)}&tf=${encodeURIComponent(tf)}`,{credentials:"include"})).json();
+}
+async function apiRisk(payload){
+  return (await fetch(`${API_BASE}/api/risk`,{
+    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
+    body:JSON.stringify(payload)
+  })).json();
+}
+async function apiShare(snapshot){
+  return (await fetch(`${API_BASE}/api/share`,{
+    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
+    body:JSON.stringify(snapshot)
+  })).json();
+}
+async function apiSaveAlert(payload){
+  return (await fetch(`${API_BASE}/api/alerts/save`,{
+    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
+    body:JSON.stringify(payload)
+  })).json();
+}
+async function apiListAlerts(){
+  return (await fetch(`${API_BASE}/api/alerts/list`,{credentials:"include"})).json();
+}
+async function apiAuthStart(email){
+  return (await fetch(`${API_BASE}/api/auth/start`,{
+    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
+    body:JSON.stringify({email})
+  })).json();
+}
+async function apiLogout(){
+  return (await fetch(`${API_BASE}/api/auth/logout`,{
+    method:"POST",headers:{"content-type":"application/json"},credentials:"include"
+  })).json();
+}
+async function apiAffiliates(fromTs,toTs){
+  return (await fetch(`${API_BASE}/api/admin/affiliates?fromTs=${encodeURIComponent(fromTs)}&toTs=${encodeURIComponent(toTs)}`,{credentials:"include"})).json();
 }
 
-let chart, candleSeries, zzSeries, upSeries, dnSeries;
-let tf = '15', symbol = 'BTC-USD';
+/** ===== Helpers ===== */
+function fmt(n){
+  if(n===null||n===undefined||Number.isNaN(Number(n))) return "-";
+  const x=Number(n); if(!Number.isFinite(x)) return "-";
+  if(Math.abs(x)>=1000) return x.toFixed(2);
+  if(Math.abs(x)>=10) return x.toFixed(3);
+  return x.toFixed(5);
+}
+function timeStr(ts){ if(!ts) return "-"; return new Date(ts*1000).toLocaleString(); }
+function dateToTs(dstr, endOfDay=false){
+  if(!dstr) return 0;
+  const d=new Date(dstr+"T00:00:00");
+  if(endOfDay) d.setHours(23,59,59,999);
+  return Math.floor(d.getTime()/1000);
+}
 
-function initChart() {
-  chart = LightweightCharts.createChart(document.getElementById('chartContainer'), {
-    width: document.getElementById('chartArea').clientWidth,
-    height: document.getElementById('main').clientHeight,
-    layout: { backgroundColor: '#000', textColor: '#d1d4dc' },
-    grid: { vertLines: { color: 'rgba(0,0,0,0)' }, horzLines: { color: 'rgba(0,0,0,0)' } }, // 网格线完全透明
-    timeScale: { timeVisible: true, secondsVisible: true },
+/** ===== Chart ===== */
+let chart,candleSeries,upSeries,dnSeries;
+let tf="15",symbol="BTC-USD";
+let lastBars=[], lastSignalsPayload=null;
+let riskLines={entry:null,stop:null,tp1:null,tp2:null};
+
+function initChart(){
+  chart=LightweightCharts.createChart(document.getElementById("chartContainer"),{
+    width:document.getElementById("chartArea").clientWidth,
+    height:document.getElementById("chartArea").clientHeight,
+    layout:{backgroundColor:"#000",textColor:"#d1d4dc"},
+    grid:{vertLines:{color:"rgba(0,0,0,0)"},horzLines:{color:"rgba(0,0,0,0)"}},
+    timeScale:{timeVisible:true,secondsVisible:false}
   });
-  candleSeries = chart.addCandlestickSeries({ upColor:'#00ff88', downColor:'#ff4757', wickUpColor:'#00ff88', wickDownColor:'#ff4757' });
-  zzSeries = chart.addLineSeries({ color:'#ffaa00', lineWidth:2 });
-  upSeries = chart.addLineSeries({ color:'#ff1493', lineWidth:4 });
-  dnSeries = chart.addLineSeries({ color:'#7fff00', lineWidth:4 });
+  candleSeries=chart.addCandlestickSeries({
+    upColor:"#00ff88",downColor:"#ff4757",
+    wickUpColor:"#00ff88",wickDownColor:"#ff4757",
+    borderVisible:false
+  });
+  upSeries=chart.addLineSeries({color:"#ff1493",lineWidth:3});
+  dnSeries=chart.addLineSeries({color:"#7fff00",lineWidth:3});
 }
 initChart();
+window.onresize=()=>chart?.resize(document.getElementById("chartArea").clientWidth,document.getElementById("chartArea").clientHeight);
 
-async function loadHistoricalData() {
-  document.getElementById('signals').innerHTML = 'Loading real-time data...';
-  try {
-    let interval, functionType, outputsize;
-    if (tf === '5') { interval = '5min'; functionType = 'TIME_SERIES_INTRADAY'; outputsize = 'compact'; }
-    else if (tf === '15') { interval = '15min'; functionType = 'TIME_SERIES_INTRADAY'; outputsize = 'compact'; }
-    else if (tf === '60') { interval = '60min'; functionType = 'TIME_SERIES_INTRADAY'; outputsize = 'compact'; }
-    else if (tf === '240') { interval = '60min'; functionType = 'TIME_SERIES_INTRADAY'; outputsize = 'full'; } // 4h 聚合
-    else if (tf === '1D') { interval = ''; functionType = 'TIME_SERIES_DAILY'; outputsize = 'full'; }
-    else if (tf === '1W') { interval = ''; functionType = 'TIME_SERIES_WEEKLY'; outputsize = 'full'; }
-    else if (tf === '1M') { interval = ''; functionType = 'TIME_SERIES_MONTHLY'; outputsize = 'full'; }
-    else if (tf === '1Y') { interval = ''; functionType = 'TIME_SERIES_DAILY'; outputsize = 'full'; } // 年线用日线
-
-    const url = `https://www.alphavantage.co/query?function=${functionType}&symbol=${symbol}${interval ? '&interval=' + interval : ''}&apikey=${API_KEY}&outputsize=${outputsize}`;
-    
-    const resp = await fetch(url);
-    const json = await resp.json();
-    
-    let seriesKey = functionType.includes('INTRADAY') ? `Time Series (${interval})` : functionType.includes('DAILY') ? 'Time Series (Daily)' : functionType.includes('WEEKLY') ? 'Weekly Time Series' : 'Monthly Time Series';
-    const series = json[seriesKey];
-    if (!series) throw new Error('No data');
-    
-    const entries = Object.entries(series).slice(0, 500);
-    const data = entries.map(([t, v]) => ({
-      time: Math.floor(new Date(t).getTime() / 1000),
-      open: parseFloat(v['1. open']),
-      high: parseFloat(v['2. high']),
-      low: parseFloat(v['3. low']),
-      close: parseFloat(v['4. close'])
-    })).reverse();
-    
-    candleSeries.setData(data);
-    calculateDarriusAITrend(data);
-    document.getElementById('signals').innerHTML = 'Live · Connected';
-  } catch (e) {
-    generateMockData();
-    document.getElementById('signals').innerHTML = 'Demo Mode · Dynamic Chart';
+/** ===== Entitlements ===== */
+function isPro(){ return !!(lastSignalsPayload?.pro); }
+function enforceProUI(){
+  const sound=document.getElementById("sound");
+  const pin=document.getElementById("pinRiskLines");
+  if(!isPro()){
+    sound.checked=false; sound.disabled=true;
+    pin.checked=false; pin.disabled=true;
+  }else{
+    sound.disabled=false;
+    pin.disabled=false;
   }
 }
-loadHistoricalData();
 
-function calculateDarriusAITrend(data) {
-  if (data.length < 50) return;
-  const period = 40;
-  const p = Math.floor(Math.sqrt(period));
-  
-  const wma = (arr, idx, len) => {
-    if (idx + len > arr.length) return arr[idx].close;
-    let sum = 0, weightSum = 0;
-    for (let i = 0; i < len; i++) {
-      const weight = len - i;
-      sum += arr[idx + i].close * weight;
-      weightSum += weight;
-    }
-    return sum / weightSum;
+/** ===== Signals cards ===== */
+function renderSignalsCards(sigRes){
+  const box=document.getElementById("signals");
+  const provider=sigRes.provider||"-";
+  const delaySec=Number(sigRes.delaySec||0);
+  const head=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="font-weight:900;">Live Signals</div>
+      <div style="color:#8b949e;font-size:12px;">Provider: <b style="color:#e6edf3">${provider}</b> · Delay: <b style="color:#e6edf3">${delaySec}s</b></div>
+    </div>`;
+  const hint=sigRes.coverage_hint?`
+    <div style="margin:10px 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:#c9d1d9;line-height:1.6;">
+      <div><b>EN:</b> ${sigRes.coverage_hint}</div>
+      <div style="margin-top:6px;"><b>中文:</b> ${sigRes.coverage_hint}</div>
+      ${(sigRes.next_steps||[]).length?`<div style="margin-top:8px;color:#8b949e;">${sigRes.next_steps.map(s=>`• ${s}`).join("<br>")}</div>`:""}
+    </div>`:"";
+  const signals=sigRes.signals||[];
+  if(!signals.length){
+    box.innerHTML=head+hint+`<div style="color:#8b949e;line-height:1.8;">
+      <div><b>EN:</b> No inflection signals found in current window.</div>
+      <div><b>中文:</b> 当前窗口未检测到拐点信号。</div></div>`;
+    return;
+  }
+  const html=signals.slice(0,10).map(s=>{
+    const side=String(s.side||"B").toUpperCase().startsWith("S")?"S":"B";
+    const cls=side==="B"?"buy":"sell";
+    const titleEN=side==="B"?"BUY Inflection":"SELL Inflection";
+    const titleZH=side==="B"?"买入拐点":"卖出拐点";
+    return `
+      <div class="signal ${cls}">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:900;">${titleEN} · ${titleZH}</div>
+          <div style="color:#8b949e;font-size:12px;">${timeStr(s.time)}</div>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);">
+            <div style="font-size:12px;color:#8b949e;">Signal Price / 信号价</div>
+            <div style="font-size:16px;font-weight:900;">${fmt(s.signal_price)}</div>
+          </div>
+          <div style="padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);">
+            <div style="font-size:12px;color:#8b949e;">Entry Ref / 入场参考</div>
+            <div style="font-size:16px;font-weight:900;">${fmt(s.entry_price)}</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;color:#8b949e;font-size:12px;line-height:1.6;">
+          <div><b>EN:</b> Signal = inflection detected. Entry = execution-friendly reference (e.g., next bar open).</div>
+          <div><b>中文:</b> 信号价=拐点确认时刻价；入场参考=更贴近执行的参考价（如下一根K线开盘价）。</div>
+        </div>
+      </div>`;
+  }).join("");
+  box.innerHTML=head+hint+html;
+}
+
+/** ===== Risk lines ===== */
+function clearRiskLines(){
+  for(const k of Object.keys(riskLines)){
+    if(riskLines[k]){ try{ candleSeries.removePriceLine(riskLines[k]); }catch(e){} riskLines[k]=null; }
+  }
+}
+function drawRiskLines(risk){
+  clearRiskLines();
+  riskLines.entry=candleSeries.createPriceLine({price:risk.entry,title:"ENTRY",color:"rgba(0,212,255,.9)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true});
+  riskLines.stop=candleSeries.createPriceLine({price:risk.stop,title:"STOP",color:"rgba(255,71,87,.9)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true});
+  riskLines.tp1=candleSeries.createPriceLine({price:risk.tp1,title:"TP1",color:"rgba(0,255,136,.9)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true});
+  riskLines.tp2=candleSeries.createPriceLine({price:risk.tp2,title:"TP2",color:"rgba(0,255,136,.6)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true});
+
+  const sideText=risk.side==="S"?"SELL / 卖出":"BUY / 买入";
+  document.getElementById("riskSummary").innerHTML=`
+    <div style="line-height:1.75;">
+      <div style="font-weight:900;margin-bottom:6px;">${sideText} · ${risk.symbol} · ${risk.tf}</div>
+      <div><b>Entry / 入场参考:</b> ${fmt(risk.entry)} &nbsp; | &nbsp; <b>Stop / 止损:</b> ${fmt(risk.stop)}</div>
+      <div><b>TP1 / 止盈1:</b> ${fmt(risk.tp1)} &nbsp; | &nbsp; <b>TP2 / 止盈2:</b> ${fmt(risk.tp2)}</div>
+      <div><b>RR:</b> ${risk.rr1} / ${risk.rr2} &nbsp; | &nbsp; <b>Signal Time:</b> ${timeStr(risk.signal_time)}</div>
+      <div style="margin-top:8px;color:rgba(230,237,243,.7);font-size:12px;">
+        EN: ${risk.notes||"Computed by backend"} &nbsp; 中文：${risk.notes||"由后端计算"}
+      </div>
+    </div>`;
+}
+function savePinnedRisk(risk){ localStorage.setItem(LOCAL_PIN_KEY(symbol,tf), JSON.stringify(risk)); }
+function clearPinnedRisk(){ localStorage.removeItem(LOCAL_PIN_KEY(symbol,tf)); }
+function loadPinnedRisk(){
+  const raw=localStorage.getItem(LOCAL_PIN_KEY(symbol,tf));
+  if(raw && isPro()){
+    try{ const risk=JSON.parse(raw);
+      if(risk?.entry&&risk?.stop&&risk?.tp1&&risk?.tp2){ document.getElementById("pinRiskLines").checked=true; drawRiskLines(risk); }
+    }catch(e){}
+  }else{
+    document.getElementById("pinRiskLines").checked=false;
+  }
+}
+
+/** ===== Export PNG ===== */
+function downloadCanvas(canvas, filename){
+  const a=document.createElement("a");
+  a.href=canvas.toDataURL("image/png");
+  a.download=filename;
+  a.click();
+}
+async function exportPng(){
+  const canvas=chart.takeScreenshot();
+  if(!canvas){ toastBilingual("Screenshot not supported.","截图功能不可用。","error"); return; }
+
+  const riskText=document.getElementById("riskSummary").innerText.trim();
+  const pad=180;
+  const out=document.createElement("canvas");
+  out.width=canvas.width; out.height=canvas.height+pad;
+  const ctx=out.getContext("2d");
+  ctx.drawImage(canvas,0,0);
+  ctx.fillStyle="rgba(0,0,0,0.88)";
+  ctx.fillRect(0,canvas.height,out.width,pad);
+  ctx.fillStyle="rgba(255,255,255,0.92)";
+  ctx.font="16px Arial";
+  ctx.fillText("Inflection Hunter Pro · Risk Copilot Snapshot",18,canvas.height+28);
+  ctx.fillStyle="rgba(255,255,255,0.85)";
+  ctx.font="13px Arial";
+  const lines=riskText.split("\n").slice(0,7);
+  let y=canvas.height+56;
+  for(const ln of lines){ ctx.fillText(ln.slice(0,120),18,y); y+=20; }
+  ctx.fillStyle="rgba(255,255,255,0.55)";
+  ctx.font="12px Arial";
+  ctx.fillText("EN: Not financial advice.  中文：仅供参考，不构成投资建议。",18,out.height-18);
+  downloadCanvas(out, `IH_${symbol}_${tf}_risk.png`);
+}
+
+/** ===== Share Link ===== */
+async function shareLink(){
+  if(!isPro()){
+    toastBilingual("Pro only. Upgrade to share snapshots.","仅Pro可分享快照，请升级。","error");
+    return;
+  }
+  const latest=lastSignalsPayload?.signals?.[0];
+  if(!latest){ toastBilingual("No signal to share.","暂无可分享的信号。","error"); return; }
+
+  // Prefer pinned risk if exists; otherwise compute once
+  let risk=null;
+  const raw=localStorage.getItem(LOCAL_PIN_KEY(symbol,tf));
+  if(raw){ try{ risk=JSON.parse(raw); }catch(e){} }
+  if(!risk?.entry){
+    const out = await apiRisk({
+      symbol, tf,
+      signal:{ side:latest.side, time:latest.time, signal_price:latest.signal_price, entry_price:latest.entry_price },
+      rr1:2, rr2:3, useATR:false
+    });
+    if(!out.ok){ toastBilingual("Risk compute failed.","风险计算失败。","error"); return; }
+    risk=out;
+  }
+  const payload={
+    symbol, timeframe:tf, side:risk.side,
+    signal_time:risk.signal_time,
+    entry:risk.entry, stop:risk.stop, tp1:risk.tp1, tp2:risk.tp2,
+    rr1:risk.rr1, rr2:risk.rr2,
+    provider:risk.provider
   };
-  
-  const vect = [];
-  for (let i = 0; i < data.length; i++) {
-    vect[i] = 2 * wma(data, i, period/2) - wma(data, i, period);
-  }
-  
-  const ext = [];
-  for (let i = 0; i < data.length - p; i++) {
-    let sum = 0, weightSum = 0;
-    for (let j = 0; j < p; j++) {
-      const weight = p - j;
-      sum += vect[i + j] * weight;
-      weightSum += weight;
-    }
-    ext[i] = sum / weightSum;
-  }
-  
-  const upData = [], dnData = [];
-  let trend = 1;
-  for (let i = ext.length - 1; i >= 0; i--) {
-    if (i < ext.length - 1) {
-      if (ext[i] > ext[i+1]) trend = 1;
-      if (ext[i] < ext[i+1]) trend = -1;
-    }
-    
-    const time = data[i + p]?.time || data[i].time;
-    
-    if (trend > 0) {
-      upData.push({ time, value: ext[i] });
-      dnData.push({ time, value: NaN });
-      if (i < ext.length - 2 && ext[i] > ext[i+1] && ext[i+1] <= ext[i+2]) {
-        chart.addMarker({ time, position: 'belowBar', color: '#ff1493', shape: 'circle', text: 'B' });
-      }
-    } else {
-      dnData.push({ time, value: ext[i] });
-      upData.push({ time, value: NaN });
-      if (i < ext.length - 2 && ext[i] < ext[i+1] && ext[i+1] >= ext[i+2]) {
-        chart.addMarker({ time, position: 'aboveBar', color: '#ffff00', shape: 'circle', text: 'S' });
-      }
-    }
-  }
-  
-  if (document.getElementById('showDarriusAI').checked) {
-    upSeries.setData(upData.filter(d => !isNaN(d.value)));
-    dnSeries.setData(dnData.filter(d => !isNaN(d.value)));
+  const res=await apiShare(payload);
+  if(res.share_url){
+    await navigator.clipboard.writeText(res.share_url);
+    toastBilingual("Share link copied.","分享链接已复制。","success");
+  }else{
+    toastBilingual("Share failed (check login/pro).","分享失败（请检查登录/Pro状态）。","error");
   }
 }
 
-function generateMockData() {
-  const now = Math.floor(Date.now() / 1000);
-  const base = symbol.includes('BTC') ? 91430 : symbol.includes('NVDA') ? 182 : symbol.includes('AAPL') ? 195 : 3400;
-  let price = base;
-  const data = [];
-  for (let i = 499; i >= 0; i--) {
-    const time = now - i * 60;
-    price += (Math.random() - 0.5) * base * 0.002;
-    const open = price;
-    const close = price + (Math.random() - 0.5) * base * 0.001;
-    const high = Math.max(open, close) + Math.random() * base * 0.0005;
-    const low = Math.min(open, close) - Math.random() * base * 0.0005;
-    data.push({ time, open, high, low, close });
+/** ===== Alerts UI ===== */
+function renderAlertsList(items){
+  const box=document.getElementById("alertsList");
+  if(!items?.length){
+    box.innerHTML=`<div class="small">EN: No alerts saved. 中文：暂无已保存提醒。</div>`;
+    return;
   }
-  candleSeries.setData(data);
-  calculateDarriusAITrend(data);
+  box.innerHTML=items.slice(0,12).map(a=>{
+    const sides=a.sides||"B,S";
+    return `
+      <div style="padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);margin-bottom:8px;">
+        <div style="font-weight:900;">${a.symbol} · ${a.tf} · <span style="color:rgba(230,237,243,.85)">Sides: ${sides}</span></div>
+        <div class="small">${a.email}</div>
+        <div class="small">EN: Deduped by last_sent_signal_time. 中文：按 last_sent_signal_time 去重。</div>
+      </div>`;
+  }).join("");
+}
+async function refreshAlerts(){
+  const hint=document.getElementById("alertsHint");
+  if(!isPro()){
+    hint.innerHTML="EN: Pro only. Upgrade to enable email alerts. 中文：仅Pro可用邮件提醒，请升级。";
+    document.getElementById("alertsList").innerHTML=`<div class="small" style="color:rgba(255,71,87,.9);">
+      EN: Pro only.<br>中文：仅Pro可用。
+    </div>`;
+    return;
+  }
+  hint.innerHTML="EN: Alerts enabled (NEW signals only, deduped). 中文：提醒已启用（仅新信号，已去重）。";
+  const res=await apiListAlerts();
+  renderAlertsList(res.items||[]);
 }
 
-function changeSymbol(sym) {
-  symbol = sym.toUpperCase();
-  document.getElementById('customSymbol').value = sym;
-  loadHistoricalData();
+/** ===== Affiliate Dashboard ===== */
+function openAffModal(){ document.getElementById("affModal").style.display="flex"; }
+function closeAffModal(){ document.getElementById("affModal").style.display="none"; }
+
+function affLink(ref){
+  const base = location.origin + location.pathname;
+  return `${base}?ref=${encodeURIComponent(ref)}`;
+}
+async function loadAff(){
+  const fromD=document.getElementById("affFrom").value;
+  const toD=document.getElementById("affTo").value;
+  const fromTs = fromD ? dateToTs(fromD,false) : 0;
+  const toTs = toD ? dateToTs(toD,true) : Math.floor(Date.now()/1000);
+
+  const res=await apiAffiliates(fromTs,toTs);
+  if(!res.ok){
+    toastBilingual("Forbidden or unavailable.","无权限或接口不可用。","error");
+    return;
+  }
+  const rows=res.rows||[];
+  const tb=document.getElementById("affTable");
+  const empty=document.getElementById("affEmptyHint");
+  tb.innerHTML="";
+
+  let totalPay=0, totalCents=0;
+  for(const r of rows){
+    const cents=Number(r.total_cents||0);
+    const usd=(cents/100).toFixed(2);
+    const comm=(cents/100*0.20).toFixed(2);
+    totalPay += Number(r.payments||0);
+    totalCents += cents;
+    tb.innerHTML += `
+      <tr class="tr">
+        <td>${r.ref}</td>
+        <td>${r.payments}</td>
+        <td>$${usd}</td>
+        <td>$${comm}</td>
+      </tr>`;
+  }
+
+  empty.style.display = rows.length ? "none":"block";
+  document.getElementById("affTotalPay").innerText = String(totalPay);
+  document.getElementById("affTotalUsd").innerText = (totalCents/100).toFixed(2);
+  document.getElementById("affTotalComm").innerText = (totalCents/100*0.20).toFixed(2);
+}
+function exportAffCsv(){
+  const fromD=document.getElementById("affFrom").value;
+  const toD=document.getElementById("affTo").value;
+  const fromTs = fromD ? dateToTs(fromD,false) : 0;
+  const toTs = toD ? dateToTs(toD,true) : Math.floor(Date.now()/1000);
+  window.open(`${API_BASE}/api/admin/affiliates.csv?fromTs=${fromTs}&toTs=${toTs}`, "_blank");
 }
 
-document.getElementById('showDarriusAI').onchange = function() {
-  if (this.checked && candleSeries.data().length > 0) {
-    calculateDarriusAITrend(candleSeries.data());
-  } else {
-    upSeries.setData([]);
-    dnSeries.setData([]);
+/** ===== Main load ===== */
+async function loadAll(){
+  document.getElementById("signals").innerHTML="Loading...";
+  clearChartOverlay();
+
+  const barsRes=await apiBars(symbol,tf);
+  if(!barsRes.ok){
+    const en=barsRes.message||"No data returned from provider.";
+    const zh=barsRes.message?.includes("港股")?barsRes.message:"数据源未返回数据，可能是标的格式或覆盖范围限制。";
+    setChartOverlay(en,zh);
+    const steps=(barsRes.next_steps||[]).map(s=>`• ${s}`).join("<br>");
+    document.getElementById("signals").innerHTML=
+      `<div style="color:#ff4757;font-weight:900;">No Data</div>
+       <div style="margin-top:10px;color:#bbb;line-height:1.7;">
+         <div><b>EN:</b> ${en}</div>
+         <div style="margin-top:6px;"><b>中文:</b> ${zh}</div>
+         ${steps?`<div style="margin-top:10px;color:#8b949e;">${steps}</div>`:""}
+       </div>`;
+    toastBilingual(en,zh,"error");
+    lastBars=[]; candleSeries.setData([]); upSeries.setData([]); dnSeries.setData([]); chart.setMarkers([]);
+    clearRiskLines(); enforceProUI();
+    return;
+  }
+
+  lastBars=(barsRes.bars||[]).map(b=>({time:b.time,open:+b.open,high:+b.high,low:+b.low,close:+b.close}));
+  candleSeries.setData(lastBars);
+
+  const sigRes=await apiSignals(symbol,tf);
+  lastSignalsPayload=sigRes;
+
+  if(sigRes.pro){
+    document.getElementById("status").innerHTML="Pro Activated · Real-time";
+    document.getElementById("status").style.background="linear-gradient(90deg,#00ff88,#00d4ff)";
+    document.getElementById("status").style.color="#000";
+    document.getElementById("watermark").style.display="none";
+    document.getElementById("upgradeBtn").style.display="none";
+  }else{
+    const ds=Number(sigRes.delaySec||60);
+    document.getElementById("status").innerHTML=`Free Version · ${ds}s Signal Delay`;
+    document.getElementById("status").style.background="rgba(0,255,136,0.15)";
+    document.getElementById("status").style.color="var(--green)";
+    document.getElementById("watermark").style.display="block";
+    document.getElementById("upgradeBtn").style.display="block";
+  }
+
+  enforceProUI();
+
+  if(document.getElementById("showDarriusAI").checked){
+    upSeries.setData(sigRes?.trendLines?.up||[]);
+    dnSeries.setData(sigRes?.trendLines?.dn||[]);
+  }else{
+    upSeries.setData([]); dnSeries.setData([]);
+  }
+
+  const markers=(sigRes.markers||[]).map(m=>({
+    time:m.time,
+    position:m.position || (m.text==="B"?"belowBar":"aboveBar"),
+    color:(m.text==="B")?"#ff1493":"#ffff00",
+    shape:m.shape||"circle",
+    text:m.text||""
+  }));
+  chart.setMarkers(markers);
+
+  renderSignalsCards(sigRes);
+  loadPinnedRisk();
+  refreshAlerts();
+  refreshAccountUI();
+}
+
+/** ===== Account UI ===== */
+async function refreshAccountUI(){
+  const me = await apiGetMe().catch(()=>({}));
+  const signedIn=!!me?.email;
+  document.getElementById("btnSignIn").style.display = signedIn?"none":"inline-block";
+  document.getElementById("btnLogout").style.display = signedIn?"inline-block":"none";
+  document.getElementById("btnPortal").style.display = signedIn?"inline-block":"none";
+
+  // Admin only affiliate dashboard
+  document.getElementById("btnAffiliate").style.display = me?.is_admin ? "inline-block" : "none";
+}
+
+/** ===== Events ===== */
+document.getElementById("btnLoadSymbol").onclick=()=>{
+  const v=document.getElementById("customSymbol").value.trim().toUpperCase();
+  if(!v) return;
+  symbol=v;
+  document.getElementById("symbolSelect").value=v;
+  clearPinnedRisk(); clearRiskLines();
+  loadAll();
+};
+document.getElementById("symbolSelect").onchange=(e)=>{
+  symbol=String(e.target.value).toUpperCase();
+  document.getElementById("customSymbol").value=symbol;
+  clearPinnedRisk(); clearRiskLines();
+  loadAll();
+};
+document.querySelectorAll(".tf-btn").forEach(b=>b.onclick=()=>{
+  document.querySelector(".tf-btn.active")?.classList.remove("active");
+  b.classList.add("active");
+  tf=b.dataset.tf;
+  clearPinnedRisk(); clearRiskLines();
+  loadAll();
+});
+document.getElementById("showDarriusAI").onchange=()=>loadAll();
+
+document.getElementById("upgradeBtn").onclick=()=>document.getElementById("paywall").style.display="flex";
+document.getElementById("closePay").onclick=()=>document.getElementById("paywall").style.display="none";
+
+async function startCheckout(priceId){
+  const p=new URLSearchParams(location.search);
+  const ref=p.get("ref")||"";
+  const res=await apiCheckout(priceId, ref);
+  if(res.url) location.href=res.url;
+  else toastBilingual("Checkout failed (sign in first).","拉起支付失败（请先登录）。","error");
+}
+document.getElementById("btnPayHalfMonthly").onclick=()=>startCheckout(STRIPE_PRICE_HALFMONTHLY);
+document.getElementById("btnPayMonthly").onclick=()=>startCheckout(STRIPE_PRICE_MONTHLY);
+document.getElementById("btnPayAnnual").onclick=()=>startCheckout(STRIPE_PRICE_ANNUAL);
+document.getElementById("btnPayLifetime").onclick=()=>startCheckout(STRIPE_PRICE_LIFETIME);
+
+document.getElementById("btnPortal").onclick=async()=>{
+  const res=await apiPortal();
+  if(res.url) location.href=res.url;
+  else toastBilingual("Portal unavailable.","无法打开管理页面。","error");
+};
+
+const authModal=document.getElementById("authModal");
+document.getElementById("btnSignIn").onclick=()=>authModal.style.display="flex";
+document.getElementById("btnAuthCancel").onclick=()=>authModal.style.display="none";
+document.getElementById("btnAuthSend").onclick=async()=>{
+  const email=document.getElementById("authEmail").value.trim();
+  if(!email.includes("@")){ toastBilingual("Please enter a valid email.","请输入有效邮箱。","error"); return; }
+  try{
+    await apiAuthStart(email);
+    authModal.style.display="none";
+    toastBilingual("Sign-in link sent. Please check your email.","登录链接已发送，请查收邮箱。","success");
+  }catch(e){
+    toastBilingual("Failed to send link.","发送失败。","error");
+  }
+};
+document.getElementById("btnLogout").onclick=async()=>{
+  await apiLogout();
+  toastBilingual("Logged out.","已退出登录。","success");
+  refreshAccountUI();
+};
+
+// Risk Copilot -> backend /api/risk
+document.getElementById("btnComputeRisk").onclick=async()=>{
+  const latest=lastSignalsPayload?.signals?.[0];
+  if(!latest){ toastBilingual("No signal yet.","暂无信号。","error"); return; }
+
+  const out=await apiRisk({
+    symbol, tf,
+    signal:{ side:latest.side, time:latest.time, signal_price:latest.signal_price, entry_price:latest.entry_price },
+    rr1:2, rr2:3, useATR:false
+  });
+  if(!out.ok){
+    toastBilingual("Risk compute failed.","风险计算失败。","error");
+    return;
+  }
+  drawRiskLines(out);
+  toastBilingual("Risk lines updated.","风险线已更新。","success");
+
+  const pin=document.getElementById("pinRiskLines");
+  if(pin.checked && isPro()){
+    savePinnedRisk(out);
+    toastBilingual("Pinned to localStorage.","已固定到本地（localStorage）。","success");
   }
 };
 
-document.querySelectorAll('.tf-btn').forEach(b => b.onclick = () => {
-  document.querySelector('.tf-btn.active')?.classList.remove('active');
-  b.classList.add('active');
-  tf = b.dataset.tf;
-  loadHistoricalData();
-});
+document.getElementById("btnClearRisk").onclick=()=>{
+  clearRiskLines(); clearPinnedRisk();
+  document.getElementById("riskSummary").innerHTML=`EN: Click “Compute Risk” to generate Entry/Stop/TP and draw risk lines on chart.<br>中文：点击“Compute Risk”生成入场/止损/止盈并绘制风险线。`;
+  toastBilingual("Risk cleared.","风险线已清除。","success");
+};
 
-window.onresize = () => chart?.resize(document.getElementById('chartArea').clientWidth, document.getElementById('main').clientHeight);
+document.getElementById("pinRiskLines").onchange=(e)=>{
+  if(!isPro()){
+    e.target.checked=false;
+    toastBilingual("Pro only.","仅Pro可用。","error");
+    return;
+  }
+  if(!e.target.checked){
+    clearPinnedRisk();
+    toastBilingual("Unpinned.","已取消固定。","success");
+  }else{
+    const txt=document.getElementById("riskSummary").innerText||"";
+    if(txt.includes("Click “Compute Risk”")){
+      toastBilingual("Compute risk first.","请先计算风险。","error");
+      e.target.checked=false;
+      return;
+    }
+    // Save latest pinned from existing price lines: prefer localStorage already set by compute.
+    toastBilingual("Pinned (will persist per symbol/tf).","已固定（按标的/周期保存）。","success");
+  }
+};
+
+document.getElementById("btnExportPng").onclick=exportPng;
+document.getElementById("btnShareLink").onclick=shareLink;
+
+// Alerts
+document.getElementById("btnSaveAlert").onclick=async()=>{
+  if(!isPro()){
+    toastBilingual("Pro only. Upgrade to enable email alerts.","仅Pro可用邮件提醒，请升级。","error");
+    return;
+  }
+  const email=document.getElementById("alertEmail").value.trim();
+  if(!email.includes("@")){ toastBilingual("Please enter a valid email.","请输入有效邮箱。","error"); return; }
+
+  const b=document.getElementById("alertSideB").checked;
+  const s=document.getElementById("alertSideS").checked;
+  if(!b && !s){ toastBilingual("Select at least one side.","至少选择买入或卖出。","error"); return; }
+  const sides = [b?"B":null, s?"S":null].filter(Boolean).join(",");
+
+  const res=await apiSaveAlert({ email, symbol, tf, sides, enabled:true });
+  if(res.ok){
+    toastBilingual("Alert saved.","提醒已保存。","success");
+    refreshAlerts();
+  }else{
+    toastBilingual("Save failed.","保存失败。","error");
+  }
+};
+document.getElementById("btnRefreshAlerts").onclick=refreshAlerts;
+
+// Affiliate Dashboard
+document.getElementById("btnAffiliate").onclick=openAffModal;
+document.getElementById("btnAffClose").onclick=closeAffModal;
+document.getElementById("btnAffLoad").onclick=loadAff;
+document.getElementById("btnAffCsv").onclick=exportAffCsv;
+document.getElementById("btnAffCopy").onclick=async()=>{
+  const ref=document.getElementById("affRef").value.trim();
+  if(!ref){ toastBilingual("Enter a ref code.","请输入ref码。","error"); return; }
+  const link=affLink(ref);
+  document.getElementById("affLinkText").innerHTML=`<span class="pill">Link</span> <span style="color:rgba(230,237,243,.9)">${link}</span>`;
+  await navigator.clipboard.writeText(link);
+  toastBilingual("Affiliate link copied.","推广链接已复制。","success");
+};
+
+/** ===== Boot ===== */
+(async function boot(){
+  const p=new URLSearchParams(location.search);
+  if(p.get("upgrade")==="1") document.getElementById("paywall").style.display="flex";
+  document.getElementById("symbolSelect").value=symbol;
+  document.getElementById("customSymbol").value=symbol;
+  await loadAll();
+})();
 </script>
 </body>
 </html>
