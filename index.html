@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Inflection Hunter Pro v6.2.1 │ Darrius FinTech Inc</title>
+<title>Inflection Hunter Pro v6.2.2 │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -23,24 +23,25 @@
     border-bottom:1px solid var(--border);
     display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:100;
   }
-  #brand{display:flex;align-items:center;gap:14px;}
+  #brand{display:flex;align-items:center;gap:14px;min-width:240px;}
   #brandLogo{font-size:28px;font-weight:900;background:linear-gradient(90deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   #brandName{font-size:18px;font-weight:900;}
   #company{font-size:12px;color:var(--text2);}
-  #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;}
+  #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;white-space:nowrap;}
 
   .top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
   .btn{
     padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
     background:rgba(255,255,255,.06);color:#fff;cursor:pointer;font-weight:800;font-size:12px;
     transition:transform .15s, background .15s, border-color .15s;
+    white-space:nowrap;
   }
   .btn:hover{transform:translateY(-1px);border-color:rgba(0,255,136,.45);}
   .btn.primary{border:none;color:#000;background:linear-gradient(135deg,var(--green),var(--cyan));}
   .btn.ghost{background:transparent;border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.85);}
   .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none;}
 
-  #copyright{font-size:12px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:20px;}
+  #copyright{font-size:12px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:20px;white-space:nowrap;}
 
   #main{display:flex;height:calc(100vh - 64px);}
   #chartArea{flex:1;position:relative;background:#0d1117;}
@@ -50,11 +51,10 @@
     font-size:8rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;
   }
 
-  /* ✅ 关键修复：sidebar 可滚动，底部内容可见 */
+  /* ✅ Sidebar scroll fix */
   #sidebar{
     width:420px;background:var(--card);border-left:1px solid var(--border);
-    display:flex;flex-direction:column;
-    overflow-y:auto; overflow-x:hidden;
+    display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;
   }
   .panel{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:16px 18px;}
   #sidebar .panel:last-child{padding-bottom:28px;}
@@ -108,15 +108,9 @@
   .card.popular{border:2px solid var(--green);position:relative;}
   .card.popular::after{content:"BEST VALUE";position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:8px 20px;border-radius:30px;font-weight:900;font-size:12px;}
 
-  /* ✅ 订阅价格强制可见（避免部署时全局样式干扰） */
   .price{
-    font-size:2.7rem;
-    font-weight:900;
-    color:#fff !important;
-    opacity:1 !important;
-    -webkit-text-fill-color:#fff !important;
-    text-shadow:0 6px 22px rgba(0,0,0,.35);
-    margin:14px 0;
+    font-size:2.7rem;font-weight:900;color:#fff !important;opacity:1 !important;
+    -webkit-text-fill-color:#fff !important;text-shadow:0 6px 22px rgba(0,0,0,.35);margin:14px 0;
   }
 
   .btn-pay{width:100%;padding:14px;margin-top:14px;border:none;border-radius:16px;font-size:1rem;font-weight:900;cursor:pointer;background:linear-gradient(90deg,var(--green),var(--cyan));color:#000;transition:transform .2s, box-shadow .2s;}
@@ -125,7 +119,10 @@
   #closePay:hover{opacity:1;transform:scale(1.06);}
 
   /* Modals */
-  #authModal,#affModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);z-index:999999;}
+  #authModal,#affModal,#partnerModal{
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.72);backdrop-filter:blur(10px);z-index:999999;
+  }
   .modal-card{width:min(820px,94vw);max-height:86vh;overflow:auto;background:rgba(22,27,34,.98);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:18px;}
   .modal-title{font-weight:900;font-size:16px;margin-bottom:10px;}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;position:sticky;bottom:0;padding-top:10px;background:linear-gradient(180deg, rgba(22,27,34,0), rgba(22,27,34,.98) 30%);}
@@ -143,6 +140,7 @@
   .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:12px;}
   .pill.green{background:rgba(0,255,136,.12);border-color:rgba(0,255,136,.25);color:rgba(0,255,136,.95)}
   .pill.red{background:rgba(255,71,87,.12);border-color:rgba(255,71,87,.25);color:rgba(255,71,87,.95)}
+  .pill.badge{background:rgba(0,212,255,.10);border-color:rgba(0,212,255,.25);color:rgba(0,212,255,.95);}
 
   @media (max-width: 920px){
     #main{flex-direction:column;}
@@ -159,13 +157,18 @@
   <div id="brand">
     <div id="brandLogo">Inflection Hunter</div>
     <div>
-      <div id="brandName">Inflection Hunter Pro <span style="opacity:.65;font-weight:900;">v6.2.1</span></div>
+      <div id="brandName">Inflection Hunter Pro <span style="opacity:.65;font-weight:900;">v6.2.2</span></div>
       <div id="company">Darrius FinTech Inc</div>
     </div>
   </div>
 
   <div class="top-actions">
     <div id="status">Free Version · 60s Signal Delay</div>
+
+    <!-- ✅ Referral badge -->
+    <div class="pill badge" id="refBadge" style="display:none;">Referred: -</div>
+
+    <button class="btn ghost" id="btnPartner">Partner Center</button>
 
     <button class="btn ghost" id="btnSignIn">Sign In</button>
     <button class="btn ghost" id="btnLogout" style="display:none;">Logout</button>
@@ -236,7 +239,6 @@
       </div>
     </div>
 
-    <!-- ✅ 新增：Market Pulse（最新价 + 情绪圆环） -->
     <div class="panel" id="pulsePanel">
       <h3>Market Pulse</h3>
 
@@ -486,16 +488,88 @@
   </div>
 </div>
 
+<!-- ✅ Partner Center (for partners, non-admin) -->
+<div id="partnerModal">
+  <div class="modal-card">
+    <div class="modal-title">Partner Center</div>
+    <div class="small" style="margin-bottom:10px;">
+      EN: Partners can track performance of their own ref code.<br>
+      中文：推广者可查看自己 ref 码的效果与返佣统计。
+    </div>
+
+    <div style="padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);">
+      <div style="font-weight:900;margin-bottom:6px;">Your Ref Code</div>
+      <input type="text" id="partnerRef" placeholder="e.g., AFF_A001">
+      <div class="row">
+        <button class="btn primary" id="btnPartnerCopy">Copy Partner Link</button>
+        <button class="btn" id="btnPartnerLoad">Load Stats</button>
+      </div>
+      <div class="small" id="partnerLinkText" style="margin-top:8px;"></div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span class="pill">Payments: <b id="partnerPay">0</b></span>
+        <span class="pill green">Total USD: <b id="partnerUsd">0.00</b></span>
+        <span class="pill red">Commission 20%: <b id="partnerComm">0.00</b></span>
+      </div>
+      <div class="small" style="margin-top:10px;color:rgba(230,237,243,.7);">
+        EN: Stats are based on successfully paid invoices/charges attributed to your ref.<br>
+        中文：统计以“实际到账”的订阅/支付为准。
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" id="btnPartnerClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /** ===== Config ===== */
 const API_BASE = ""; // same domain => ""; cross domain => "http://localhost:3000"
 const LOCAL_PIN_KEY = (sym, tf) => `ih_pin_risk:${sym}:${tf}`;
 
-// Replace with real Stripe price IDs in production:
+/** Referral persistence */
+const REF_KEY = "ih_ref_code";
+const REF_TS_KEY = "ih_ref_ts";
+const REF_TTL_DAYS = 30;
+
+/** Replace with real Stripe price IDs in production */
 const STRIPE_PRICE_HALFMONTHLY = "price_9.9";
 const STRIPE_PRICE_MONTHLY = "price_19.99";
 const STRIPE_PRICE_ANNUAL = "price_99";
 const STRIPE_PRICE_LIFETIME = "price_299";
+
+/** ===== Referral helpers ===== */
+function setRefCode(ref){
+  if(!ref) return;
+  localStorage.setItem(REF_KEY, ref);
+  localStorage.setItem(REF_TS_KEY, String(Date.now()));
+}
+function getRefCode(){
+  const ref = localStorage.getItem(REF_KEY) || "";
+  const ts = Number(localStorage.getItem(REF_TS_KEY) || 0);
+  if(!ref || !ts) return "";
+  const ageDays = (Date.now() - ts) / (1000*60*60*24);
+  if(ageDays > REF_TTL_DAYS){
+    localStorage.removeItem(REF_KEY);
+    localStorage.removeItem(REF_TS_KEY);
+    return "";
+  }
+  return ref;
+}
+function updateRefBadge(){
+  const r = getRefCode();
+  const el = document.getElementById("refBadge");
+  if(!el) return;
+  if(r){
+    el.style.display="inline-block";
+    el.textContent=`Referred: ${r}`;
+  }else{
+    el.style.display="none";
+  }
+}
 
 /** ===== Toast + Overlay ===== */
 function toastBilingual(en, zh, type="info"){
@@ -595,7 +669,13 @@ async function apiAffiliates(fromTs,toTs){
   return (await fetch(`${API_BASE}/api/admin/affiliates?fromTs=${encodeURIComponent(fromTs)}&toTs=${encodeURIComponent(toTs)}`,{credentials:"include"})).json();
 }
 
-/* (Optional) If you have backend /api/prices, you can enable dynamic paywall price hydration */
+/* Partner stats (partners/non-admin) */
+async function apiPartnerStats(ref){
+  // You implement backend: GET /api/partner/stats?ref=AFF_A001
+  return (await fetch(`${API_BASE}/api/partner/stats?ref=${encodeURIComponent(ref)}`,{credentials:"include"})).json();
+}
+
+/* (Optional) If you have backend /api/prices, enable dynamic paywall price hydration */
 async function apiPrices(priceIds){
   return (await fetch(`${API_BASE}/api/prices`,{
     method:"POST",
@@ -621,11 +701,8 @@ async function hydratePaywallPrices(){
       const el = document.getElementById(elId);
       const it = map.get(pid);
       if(!el) return;
-      if(it?.unit_amount != null){
-        el.textContent = formatMoney(it.unit_amount/100, it.currency);
-      }else{
-        el.textContent = fallback;
-      }
+      if(it?.unit_amount != null) el.textContent = formatMoney(it.unit_amount/100, it.currency);
+      else el.textContent = fallback;
     };
     set("priceHalfMonthly", STRIPE_PRICE_HALFMONTHLY, "$9.90");
     set("priceMonthly", STRIPE_PRICE_MONTHLY, "$19.99");
@@ -694,7 +771,6 @@ function drawSentimentRing(score){
 
 function computeSentimentScore(bars, sigRes){
   if(!bars || bars.length < 60) return null;
-
   const n = Math.min(60, bars.length-1);
   const slice = bars.slice(-n);
   const closes = slice.map(b=>Number(b.close));
@@ -714,9 +790,7 @@ function computeSentimentScore(bars, sigRes){
   const dnLast = sigRes?.trendLines?.dn?.length ? sigRes.trendLines.dn[sigRes.trendLines.dn.length-1] : null;
   if(upLast && !dnLast) trend = +1;
   if(dnLast && !upLast) trend = -1;
-  if(upLast && dnLast){
-    trend = (upLast.time >= dnLast.time) ? +1 : -1;
-  }
+  if(upLast && dnLast) trend = (upLast.time >= dnLast.time) ? +1 : -1;
 
   let sigBias=0;
   const latest = sigRes?.signals?.[0];
@@ -725,13 +799,7 @@ function computeSentimentScore(bars, sigRes){
     sigBias = (side==="B") ? +1 : -1;
   }
 
-  const score =
-    50
-    + clamp(ret*800, -25, 25)
-    + trend*12
-    + sigBias*8
-    - clamp(vol*600, 0, 18);
-
+  const score = 50 + clamp(ret*800, -25, 25) + trend*12 + sigBias*8 - clamp(vol*600, 0, 18);
   return clamp(score,0,100);
 }
 
@@ -758,9 +826,7 @@ function updateMarketPulse(barsRes, sigRes){
 
   if(prEl) prEl.textContent = `Provider: ${sigRes?.provider||barsRes?.provider||"-"}`;
   if(lpEl) lpEl.textContent = fmt(last);
-  if(chEl){
-    chEl.innerHTML = `Change (${backN} bars): <b style="color:${chg>=0?'rgba(0,255,136,0.95)':'rgba(255,71,87,0.95)'}">${(chg*100).toFixed(2)}%</b>`;
-  }
+  if(chEl) chEl.innerHTML = `Change (${backN} bars): <b style="color:${chg>=0?'rgba(0,255,136,0.95)':'rgba(255,71,87,0.95)'}">${(chg*100).toFixed(2)}%</b>`;
 
   const score = computeSentimentScore(bars, sigRes);
   if(score==null){
@@ -897,7 +963,10 @@ function loadPinnedRisk(){
   const raw=localStorage.getItem(LOCAL_PIN_KEY(symbol,tf));
   if(raw && isPro()){
     try{ const risk=JSON.parse(raw);
-      if(risk?.entry&&risk?.stop&&risk?.tp1&&risk?.tp2){ document.getElementById("pinRiskLines").checked=true; drawRiskLines(risk); }
+      if(risk?.entry&&risk?.stop&&risk?.tp1&&risk?.tp2){
+        document.getElementById("pinRiskLines").checked=true;
+        drawRiskLines(risk);
+      }
     }catch(e){}
   }else{
     document.getElementById("pinRiskLines").checked=false;
@@ -1057,6 +1126,10 @@ function exportAffCsv(){
   window.open(`${API_BASE}/api/admin/affiliates.csv?fromTs=${fromTs}&toTs=${toTs}`, "_blank");
 }
 
+/** ===== Partner Center ===== */
+function openPartnerModal(){ document.getElementById("partnerModal").style.display="flex"; }
+function closePartnerModal(){ document.getElementById("partnerModal").style.display="none"; }
+
 /** ===== Main load ===== */
 async function loadAll(){
   document.getElementById("signals").innerHTML="Loading...";
@@ -1067,7 +1140,6 @@ async function loadAll(){
     const en=barsRes.message||"No data returned from provider.";
     const zh="数据源未返回数据，可能是标的格式/覆盖范围/权限限制。";
     setChartOverlay(en,zh);
-
     updateMarketPulse({bars:[]},{});
 
     const steps=(barsRes.next_steps||[]).map(s=>`• ${s}`).join("<br>");
@@ -1173,12 +1245,19 @@ document.getElementById("upgradeBtn").onclick=async()=>{
 document.getElementById("closePay").onclick=()=>document.getElementById("paywall").style.display="none";
 
 async function startCheckout(priceId){
+  // ✅ persist ref from URL if present
   const p=new URLSearchParams(location.search);
-  const ref=p.get("ref")||"";
+  const refFromUrl = p.get("ref") || "";
+  if(refFromUrl) setRefCode(refFromUrl);
+
+  // ✅ persistent attribution (30 days)
+  const ref = getRefCode();
+
   const res=await apiCheckout(priceId, ref);
   if(res.url) location.href=res.url;
   else toastBilingual("Checkout failed (sign in first).","拉起支付失败（请先登录）。","error");
 }
+
 document.getElementById("btnPayHalfMonthly").onclick=()=>startCheckout(STRIPE_PRICE_HALFMONTHLY);
 document.getElementById("btnPayMonthly").onclick=()=>startCheckout(STRIPE_PRICE_MONTHLY);
 document.getElementById("btnPayAnnual").onclick=()=>startCheckout(STRIPE_PRICE_ANNUAL);
@@ -1295,18 +1374,58 @@ document.getElementById("btnAffCopy").onclick=async()=>{
   toastBilingual("Affiliate link copied.","推广链接已复制。","success");
 };
 
+// Partner Center
+const partnerModal=document.getElementById("partnerModal");
+document.getElementById("btnPartner").onclick=openPartnerModal;
+document.getElementById("btnPartnerClose").onclick=closePartnerModal;
+
+document.getElementById("btnPartnerCopy").onclick=async()=>{
+  const ref=document.getElementById("partnerRef").value.trim();
+  if(!ref){ toastBilingual("Enter your ref code.","请输入你的ref码。","error"); return; }
+  const link = `${location.origin + location.pathname}?ref=${encodeURIComponent(ref)}`;
+  document.getElementById("partnerLinkText").innerHTML = `<span class="pill">Link</span> <span style="color:rgba(230,237,243,.9)">${link}</span>`;
+  await navigator.clipboard.writeText(link);
+  toastBilingual("Partner link copied.","推广链接已复制。","success");
+};
+
+document.getElementById("btnPartnerLoad").onclick=async()=>{
+  const ref=document.getElementById("partnerRef").value.trim();
+  if(!ref){ toastBilingual("Enter your ref code.","请输入你的ref码。","error"); return; }
+  const res = await apiPartnerStats(ref);
+  if(!res.ok){
+    toastBilingual(res.message||"Stats unavailable (check login/permission).","无法获取统计（请检查登录/权限）。","error");
+    return;
+  }
+  const cents = Number(res.total_cents||0);
+  const usd = (cents/100);
+  document.getElementById("partnerPay").innerText = String(res.payments||0);
+  document.getElementById("partnerUsd").innerText = usd.toFixed(2);
+  document.getElementById("partnerComm").innerText = (usd*0.20).toFixed(2);
+};
+
 /** ===== Boot ===== */
 (async function boot(){
   const p=new URLSearchParams(location.search);
+
+  // ✅ persist referral on landing
+  const refFromUrl = p.get("ref") || "";
+  if(refFromUrl) setRefCode(refFromUrl);
+  updateRefBadge();
+
+  // auto show paywall
   if(p.get("upgrade")==="1"){
     document.getElementById("paywall").style.display="flex";
     await hydratePaywallPrices();
   }
+
   document.getElementById("symbolSelect").value=symbol;
   document.getElementById("customSymbol").value=symbol;
   drawSentimentRing(50);
+
   await loadAll();
 })();
 </script>
 </body>
 </html>
+
+
