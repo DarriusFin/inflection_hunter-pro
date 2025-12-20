@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Inflection Hunter Pro v6.2 │ Darrius FinTech Inc</title>
+<title>Inflection Hunter Pro v6.2.1 │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -50,8 +50,14 @@
     font-size:8rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;
   }
 
-  #sidebar{width:420px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  /* ✅ 关键修复：sidebar 可滚动，底部内容可见 */
+  #sidebar{
+    width:420px;background:var(--card);border-left:1px solid var(--border);
+    display:flex;flex-direction:column;
+    overflow-y:auto; overflow-x:hidden;
+  }
   .panel{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:16px 18px;}
+  #sidebar .panel:last-child{padding-bottom:28px;}
   .panel h3{color:var(--green);font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
   .panel h3::before{content:"◆";font-size:11px;}
 
@@ -101,7 +107,18 @@
   .card:hover{transform:translateY(-8px);border-color:rgba(0,255,136,.6);}
   .card.popular{border:2px solid var(--green);position:relative;}
   .card.popular::after{content:"BEST VALUE";position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:8px 20px;border-radius:30px;font-weight:900;font-size:12px;}
-  .price{font-size:2.7rem;font-weight:900;color:#fff;margin:14px 0;}
+
+  /* ✅ 订阅价格强制可见（避免部署时全局样式干扰） */
+  .price{
+    font-size:2.7rem;
+    font-weight:900;
+    color:#fff !important;
+    opacity:1 !important;
+    -webkit-text-fill-color:#fff !important;
+    text-shadow:0 6px 22px rgba(0,0,0,.35);
+    margin:14px 0;
+  }
+
   .btn-pay{width:100%;padding:14px;margin-top:14px;border:none;border-radius:16px;font-size:1rem;font-weight:900;cursor:pointer;background:linear-gradient(90deg,var(--green),var(--cyan));color:#000;transition:transform .2s, box-shadow .2s;}
   .btn-pay:hover{transform:scale(1.03);box-shadow:0 14px 34px rgba(0,255,136,0.35);}
   #closePay{position:absolute;top:18px;right:22px;font-size:42px;cursor:pointer;color:#fff;opacity:0.8;transition:.2s;}
@@ -142,7 +159,7 @@
   <div id="brand">
     <div id="brandLogo">Inflection Hunter</div>
     <div>
-      <div id="brandName">Inflection Hunter Pro <span style="opacity:.65;font-weight:900;">v6.2</span></div>
+      <div id="brandName">Inflection Hunter Pro <span style="opacity:.65;font-weight:900;">v6.2.1</span></div>
       <div id="company">Darrius FinTech Inc</div>
     </div>
   </div>
@@ -216,6 +233,34 @@
       <div class="small">
         EN: Indices usually use ETFs (SPY/QQQ) unless provider offers index feeds.<br>
         中文：指数通常用 ETF（SPY/QQQ）替代，除非数据源提供指数K线。
+      </div>
+    </div>
+
+    <!-- ✅ 新增：Market Pulse（最新价 + 情绪圆环） -->
+    <div class="panel" id="pulsePanel">
+      <h3>Market Pulse</h3>
+
+      <div style="display:flex;gap:14px;align-items:center;">
+        <canvas id="sentimentRing" width="120" height="120" style="flex:0 0 auto;"></canvas>
+
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:900;font-size:13px;">Last Price / 最新价</div>
+            <div class="pill" id="pulseProvider">Provider: -</div>
+          </div>
+
+          <div style="margin-top:8px;font-size:26px;font-weight:900;" id="lastPrice">--</div>
+
+          <div style="margin-top:6px;color:var(--text2);font-size:12px;line-height:1.6;">
+            <div id="priceChange">Change: --</div>
+            <div id="sentimentText">Sentiment: --</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="small" style="margin-top:10px;">
+        EN: Sentiment is a price-action + DarriusAI trend composite (not social sentiment).<br>
+        中文：情绪值为价格行为 + DarriusAI 趋势的综合指标（非社交媒体情绪）。
       </div>
     </div>
 
@@ -303,7 +348,7 @@
       </div>
     </div>
 
-    <div class="panel" style="flex:1;text-align:center;padding-top:18px;">
+    <div class="panel" style="text-align:center;padding-top:18px;">
       <p style="color:var(--text2);font-size:13px;line-height:1.9;">
         World's Leading Multi-Asset Inflection Detection<br>
         Exclusively developed by Darrius FinTech Inc
@@ -328,28 +373,28 @@
     <div class="cards">
       <div class="card">
         <h3>Half-Monthly</h3>
-        <div class="price">$9.9</div>
+        <div class="price" id="priceHalfMonthly">$9.90</div>
         <p>7-day free trial<br>Auto-bills every 2 weeks</p>
         <button class="btn-pay" id="btnPayHalfMonthly">Start Trial</button>
       </div>
 
       <div class="card">
         <h3>Monthly</h3>
-        <div class="price">$19.99</div>
+        <div class="price" id="priceMonthly">$19.99</div>
         <p>7-day free trial<br>Cancel anytime</p>
         <button class="btn-pay" id="btnPayMonthly">Start Trial</button>
       </div>
 
       <div class="card popular">
         <h3>Annual</h3>
-        <div class="price">$99</div>
+        <div class="price" id="priceAnnual">$99.00</div>
         <p><strong>Only $8.25/month</strong><br><mark>Save big</mark></p>
         <button class="btn-pay" id="btnPayAnnual">Best Deal</button>
       </div>
 
       <div class="card">
         <h3>Lifetime</h3>
-        <div class="price">$299</div>
+        <div class="price" id="priceLifetime">$299.00</div>
         <p>One-time payment<br>Own forever</p>
         <button class="btn-pay" id="btnPayLifetime">Buy Lifetime</button>
       </div>
@@ -446,7 +491,7 @@
 const API_BASE = ""; // same domain => ""; cross domain => "http://localhost:3000"
 const LOCAL_PIN_KEY = (sym, tf) => `ih_pin_risk:${sym}:${tf}`;
 
-// put real Stripe price IDs:
+// Replace with real Stripe price IDs in production:
 const STRIPE_PRICE_HALFMONTHLY = "price_9.9";
 const STRIPE_PRICE_MONTHLY = "price_19.99";
 const STRIPE_PRICE_ANNUAL = "price_99";
@@ -509,7 +554,7 @@ async function apiPortal(){
   })).json();
 }
 async function apiBars(sym,tf){
-  return (await fetch(`${API_BASE}/api/bars?symbol=${encodeURIComponent(sym)}&tf=${encodeURIComponent(tf)}&limit=800`,{credentials:"include"})).json();
+  return (await fetch(`${API_BASE}/api/bars?symbol=${encodeURIComponent(sym)}&tf=${encodeURIComponent(tf)}&limit=900`,{credentials:"include"})).json();
 }
 async function apiSignals(sym,tf){
   return (await fetch(`${API_BASE}/api/signals?symbol=${encodeURIComponent(sym)}&tf=${encodeURIComponent(tf)}`,{credentials:"include"})).json();
@@ -550,10 +595,49 @@ async function apiAffiliates(fromTs,toTs){
   return (await fetch(`${API_BASE}/api/admin/affiliates?fromTs=${encodeURIComponent(fromTs)}&toTs=${encodeURIComponent(toTs)}`,{credentials:"include"})).json();
 }
 
+/* (Optional) If you have backend /api/prices, you can enable dynamic paywall price hydration */
+async function apiPrices(priceIds){
+  return (await fetch(`${API_BASE}/api/prices`,{
+    method:"POST",
+    headers:{"content-type":"application/json"},
+    credentials:"include",
+    body:JSON.stringify({ priceIds })
+  })).json();
+}
+function formatMoney(amount, currency){
+  try{
+    return new Intl.NumberFormat(undefined, { style:"currency", currency: (currency||"USD").toUpperCase() }).format(amount);
+  }catch(e){
+    return `$${Number(amount).toFixed(2)}`;
+  }
+}
+async function hydratePaywallPrices(){
+  const priceIds = [STRIPE_PRICE_HALFMONTHLY,STRIPE_PRICE_MONTHLY,STRIPE_PRICE_ANNUAL,STRIPE_PRICE_LIFETIME];
+  try{
+    const res = await apiPrices(priceIds);
+    if(!res.ok || !res.items) return;
+    const map = new Map(res.items.map(x=>[x.id,x]));
+    const set = (elId, pid, fallback)=>{
+      const el = document.getElementById(elId);
+      const it = map.get(pid);
+      if(!el) return;
+      if(it?.unit_amount != null){
+        el.textContent = formatMoney(it.unit_amount/100, it.currency);
+      }else{
+        el.textContent = fallback;
+      }
+    };
+    set("priceHalfMonthly", STRIPE_PRICE_HALFMONTHLY, "$9.90");
+    set("priceMonthly", STRIPE_PRICE_MONTHLY, "$19.99");
+    set("priceAnnual", STRIPE_PRICE_ANNUAL, "$99.00");
+    set("priceLifetime", STRIPE_PRICE_LIFETIME, "$299.00");
+  }catch(e){}
+}
+
 /** ===== Helpers ===== */
 function fmt(n){
-  if(n===null||n===undefined||Number.isNaN(Number(n))) return "-";
-  const x=Number(n); if(!Number.isFinite(x)) return "-";
+  if(n===null||n===undefined||Number.isNaN(Number(n))) return "--";
+  const x=Number(n); if(!Number.isFinite(x)) return "--";
   if(Math.abs(x)>=1000) return x.toFixed(2);
   if(Math.abs(x)>=10) return x.toFixed(3);
   return x.toFixed(5);
@@ -565,11 +649,135 @@ function dateToTs(dstr, endOfDay=false){
   if(endOfDay) d.setHours(23,59,59,999);
   return Math.floor(d.getTime()/1000);
 }
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+/** ===== Market Pulse (Last price + Sentiment ring) ===== */
+function drawSentimentRing(score){
+  const c=document.getElementById("sentimentRing");
+  if(!c) return;
+  const ctx=c.getContext("2d");
+  const w=c.width, h=c.height;
+  const cx=w/2, cy=h/2;
+  const r=46;
+  const line=14;
+
+  ctx.clearRect(0,0,w,h);
+
+  ctx.beginPath();
+  ctx.strokeStyle="rgba(255,255,255,0.10)";
+  ctx.lineWidth=line;
+  ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.stroke();
+
+  const pct=clamp(score,0,100)/100;
+  const start=-Math.PI/2;
+  const end=start + pct*Math.PI*2;
+
+  const col = score>=60 ? "rgba(0,255,136,0.95)" : score<=40 ? "rgba(255,71,87,0.95)" : "rgba(255,170,0,0.95)";
+  ctx.beginPath();
+  ctx.strokeStyle=col;
+  ctx.lineWidth=line;
+  ctx.lineCap="round";
+  ctx.arc(cx,cy,r,start,end);
+  ctx.stroke();
+
+  ctx.fillStyle="rgba(255,255,255,0.92)";
+  ctx.font="900 24px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(String(Math.round(score)), cx, cy-6);
+
+  ctx.fillStyle="rgba(255,255,255,0.65)";
+  ctx.font="12px Arial";
+  ctx.fillText("Sentiment", cx, cy+18);
+}
+
+function computeSentimentScore(bars, sigRes){
+  if(!bars || bars.length < 60) return null;
+
+  const n = Math.min(60, bars.length-1);
+  const slice = bars.slice(-n);
+  const closes = slice.map(b=>Number(b.close));
+  const last = closes[closes.length-1];
+  const first = closes[0];
+  const ret = (last-first)/first;
+
+  let vol=0;
+  for(let i=1;i<closes.length;i++){
+    const r=(closes[i]-closes[i-1])/closes[i-1];
+    vol += r*r;
+  }
+  vol = Math.sqrt(vol/(closes.length-1));
+
+  let trend = 0;
+  const upLast = sigRes?.trendLines?.up?.length ? sigRes.trendLines.up[sigRes.trendLines.up.length-1] : null;
+  const dnLast = sigRes?.trendLines?.dn?.length ? sigRes.trendLines.dn[sigRes.trendLines.dn.length-1] : null;
+  if(upLast && !dnLast) trend = +1;
+  if(dnLast && !upLast) trend = -1;
+  if(upLast && dnLast){
+    trend = (upLast.time >= dnLast.time) ? +1 : -1;
+  }
+
+  let sigBias=0;
+  const latest = sigRes?.signals?.[0];
+  if(latest){
+    const side = String(latest.side||"B").toUpperCase().startsWith("S")?"S":"B";
+    sigBias = (side==="B") ? +1 : -1;
+  }
+
+  const score =
+    50
+    + clamp(ret*800, -25, 25)
+    + trend*12
+    + sigBias*8
+    - clamp(vol*600, 0, 18);
+
+  return clamp(score,0,100);
+}
+
+function updateMarketPulse(barsRes, sigRes){
+  const bars = (barsRes?.bars||[]).map(b=>({time:b.time, open:+b.open, high:+b.high, low:+b.low, close:+b.close}));
+  const lpEl=document.getElementById("lastPrice");
+  const chEl=document.getElementById("priceChange");
+  const stEl=document.getElementById("sentimentText");
+  const prEl=document.getElementById("pulseProvider");
+
+  if(!bars.length){
+    if(lpEl) lpEl.textContent="--";
+    if(chEl) chEl.textContent="Change: --";
+    if(stEl) stEl.textContent="Sentiment: --";
+    if(prEl) prEl.textContent="Provider: -";
+    drawSentimentRing(0);
+    return;
+  }
+
+  const last = bars[bars.length-1].close;
+  const backN = Math.max(1, Math.min(24, bars.length-1));
+  const prev = bars[bars.length-1-backN].close;
+  const chg = (last-prev)/prev;
+
+  if(prEl) prEl.textContent = `Provider: ${sigRes?.provider||barsRes?.provider||"-"}`;
+  if(lpEl) lpEl.textContent = fmt(last);
+  if(chEl){
+    chEl.innerHTML = `Change (${backN} bars): <b style="color:${chg>=0?'rgba(0,255,136,0.95)':'rgba(255,71,87,0.95)'}">${(chg*100).toFixed(2)}%</b>`;
+  }
+
+  const score = computeSentimentScore(bars, sigRes);
+  if(score==null){
+    if(stEl) stEl.textContent="Sentiment: -- (need more bars)";
+    drawSentimentRing(0);
+    return;
+  }
+
+  const label = score>=65 ? "Bullish / 偏多" : score<=35 ? "Bearish / 偏空" : "Neutral / 中性";
+  if(stEl) stEl.innerHTML = `Sentiment: <b>${label}</b> (${Math.round(score)}/100)`;
+  drawSentimentRing(score);
+}
 
 /** ===== Chart ===== */
 let chart,candleSeries,upSeries,dnSeries;
 let tf="15",symbol="BTC-USD";
-let lastBars=[], lastSignalsPayload=null;
+let lastSignalsPayload=null;
 let riskLines={entry:null,stop:null,tp1:null,tp2:null};
 
 function initChart(){
@@ -738,7 +946,6 @@ async function shareLink(){
   const latest=lastSignalsPayload?.signals?.[0];
   if(!latest){ toastBilingual("No signal to share.","暂无可分享的信号。","error"); return; }
 
-  // Prefer pinned risk if exists; otherwise compute once
   let risk=null;
   const raw=localStorage.getItem(LOCAL_PIN_KEY(symbol,tf));
   if(raw){ try{ risk=JSON.parse(raw); }catch(e){} }
@@ -801,7 +1008,6 @@ async function refreshAlerts(){
 /** ===== Affiliate Dashboard ===== */
 function openAffModal(){ document.getElementById("affModal").style.display="flex"; }
 function closeAffModal(){ document.getElementById("affModal").style.display="none"; }
-
 function affLink(ref){
   const base = location.origin + location.pathname;
   return `${base}?ref=${encodeURIComponent(ref)}`;
@@ -859,8 +1065,11 @@ async function loadAll(){
   const barsRes=await apiBars(symbol,tf);
   if(!barsRes.ok){
     const en=barsRes.message||"No data returned from provider.";
-    const zh=barsRes.message?.includes("港股")?barsRes.message:"数据源未返回数据，可能是标的格式或覆盖范围限制。";
+    const zh="数据源未返回数据，可能是标的格式/覆盖范围/权限限制。";
     setChartOverlay(en,zh);
+
+    updateMarketPulse({bars:[]},{});
+
     const steps=(barsRes.next_steps||[]).map(s=>`• ${s}`).join("<br>");
     document.getElementById("signals").innerHTML=
       `<div style="color:#ff4757;font-weight:900;">No Data</div>
@@ -870,16 +1079,19 @@ async function loadAll(){
          ${steps?`<div style="margin-top:10px;color:#8b949e;">${steps}</div>`:""}
        </div>`;
     toastBilingual(en,zh,"error");
-    lastBars=[]; candleSeries.setData([]); upSeries.setData([]); dnSeries.setData([]); chart.setMarkers([]);
+
+    candleSeries.setData([]); upSeries.setData([]); dnSeries.setData([]); chart.setMarkers([]);
     clearRiskLines(); enforceProUI();
     return;
   }
 
-  lastBars=(barsRes.bars||[]).map(b=>({time:b.time,open:+b.open,high:+b.high,low:+b.low,close:+b.close}));
-  candleSeries.setData(lastBars);
+  const bars=(barsRes.bars||[]).map(b=>({time:b.time,open:+b.open,high:+b.high,low:+b.low,close:+b.close}));
+  candleSeries.setData(bars);
 
   const sigRes=await apiSignals(symbol,tf);
   lastSignalsPayload=sigRes;
+
+  updateMarketPulse(barsRes, sigRes);
 
   if(sigRes.pro){
     document.getElementById("status").innerHTML="Pro Activated · Real-time";
@@ -927,8 +1139,6 @@ async function refreshAccountUI(){
   document.getElementById("btnSignIn").style.display = signedIn?"none":"inline-block";
   document.getElementById("btnLogout").style.display = signedIn?"inline-block":"none";
   document.getElementById("btnPortal").style.display = signedIn?"inline-block":"none";
-
-  // Admin only affiliate dashboard
   document.getElementById("btnAffiliate").style.display = me?.is_admin ? "inline-block" : "none";
 }
 
@@ -956,7 +1166,10 @@ document.querySelectorAll(".tf-btn").forEach(b=>b.onclick=()=>{
 });
 document.getElementById("showDarriusAI").onchange=()=>loadAll();
 
-document.getElementById("upgradeBtn").onclick=()=>document.getElementById("paywall").style.display="flex";
+document.getElementById("upgradeBtn").onclick=async()=>{
+  document.getElementById("paywall").style.display="flex";
+  await hydratePaywallPrices();
+};
 document.getElementById("closePay").onclick=()=>document.getElementById("paywall").style.display="none";
 
 async function startCheckout(priceId){
@@ -1037,14 +1250,7 @@ document.getElementById("pinRiskLines").onchange=(e)=>{
     clearPinnedRisk();
     toastBilingual("Unpinned.","已取消固定。","success");
   }else{
-    const txt=document.getElementById("riskSummary").innerText||"";
-    if(txt.includes("Click “Compute Risk”")){
-      toastBilingual("Compute risk first.","请先计算风险。","error");
-      e.target.checked=false;
-      return;
-    }
-    // Save latest pinned from existing price lines: prefer localStorage already set by compute.
-    toastBilingual("Pinned (will persist per symbol/tf).","已固定（按标的/周期保存）。","success");
+    toastBilingual("Pinned (per symbol/tf).","已固定（按标的/周期保存）。","success");
   }
 };
 
@@ -1092,9 +1298,13 @@ document.getElementById("btnAffCopy").onclick=async()=>{
 /** ===== Boot ===== */
 (async function boot(){
   const p=new URLSearchParams(location.search);
-  if(p.get("upgrade")==="1") document.getElementById("paywall").style.display="flex";
+  if(p.get("upgrade")==="1"){
+    document.getElementById("paywall").style.display="flex";
+    await hydratePaywallPrices();
+  }
   document.getElementById("symbolSelect").value=symbol;
   document.getElementById("customSymbol").value=symbol;
+  drawSentimentRing(50);
   await loadAll();
 })();
 </script>
