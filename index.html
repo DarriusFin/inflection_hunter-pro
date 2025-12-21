@@ -157,6 +157,9 @@ button.ghost{background:#1e2533;}
 <div id="toast"></div>
 
 <script>
+/** =======================
+ * constants & helpers
+ * ======================= */
 const GREEN="#00ff88", RED="#ff4757", BLUE="#00d4ff", ORANGE="#ffaa00";
 let toastTimer=null;
 
@@ -173,6 +176,26 @@ function fmt(n){
   return Math.abs(x)>=1000 ? x.toFixed(2) : x.toFixed(4);
 }
 
+// ✅ sort + dedup: 保证 setData 不黑屏
+function normalizePoints(pts){
+  pts.sort((a,b)=>a.time-b.time);
+  const out=[];
+  let lastT=null;
+  for(const p of pts){
+    if(!p || p.value===null || p.value===undefined || isNaN(p.value)) continue;
+    if(lastT===p.time){
+      out[out.length-1]=p; // 覆盖同time
+    }else{
+      out.push(p);
+      lastT=p.time;
+    }
+  }
+  return out;
+}
+
+/** =======================
+ * chart init
+ * ======================= */
 let chart = LightweightCharts.createChart(document.getElementById("chart"), {
   layout:{ background:{ color:"#0b0f17" }, textColor:"#d1d4dc" },
   grid:{ vertLines:{ color:"transparent" }, horzLines:{ color:"transparent" } },
@@ -187,11 +210,11 @@ let candle = chart.addCandlestickSeries({
   borderVisible:false
 });
 
-// ✅ 主线两条（绿/红），用“跳过点”实现 EMPTY_VALUE（不会再出现插到0的竖线）
+// ✅ 主线两条（绿/红）互斥显示 = MT 的 Uptrend/Dntrend
 let mainUp = chart.addLineSeries({ color: GREEN, lineWidth: 3 });
 let mainDn = chart.addLineSeries({ color: RED,   lineWidth: 3 });
 
-// ✅ 黄线 EMA20
+// ✅ 辅助线：EMA20 黄色
 let auxLineSeries = chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
 
 // risk lines
@@ -206,7 +229,9 @@ function addRiskLine(price,title,color){
   riskPriceLines.push(pl);
 }
 
-// data store
+/** =======================
+ * store & pulse
+ * ======================= */
 let barsStore=[];
 let currentSymbol="BTCUSDT";
 let currentTf="1d";
@@ -222,6 +247,9 @@ function calcMarketPulse(latest){
   return { label:"Bearish · 强空", value:v, color:RED };
 }
 
+/** =======================
+ * subscription & misc
+ * ======================= */
 function startSubscription(){
   const plan=document.getElementById("plan").value;
   let url="";
@@ -238,6 +266,9 @@ function copyShareLink(){
 }
 function exportChartPNG(){ showToast("Export PNG · 导出图片（占位）"); }
 
+/** =======================
+ * data sources
+ * ======================= */
 function getBinanceInterval(tf){ return tf; }
 
 function generateSimulatedData(symbol, tf){
@@ -333,14 +364,17 @@ function connectWebSocket(symbol, tf){
 }
 
 /** =======================
- *  indicator core
- *  ======================= */
+ * indicator core (fixed)
+ * - no null placeholder => no vertical spikes
+ * - normalizePoints => no black screen
+ * - B/S uses MT pivot rule
+ * ======================= */
 function processData(bars){
   if(!bars || bars.length<40) return;
 
   const closes=bars.map(b=>b.close);
 
-  // EMA
+  // EMA20
   function ema(arr, per){
     const res=new Array(arr.length).fill(NaN);
     const k=2/(per+1);
@@ -352,15 +386,14 @@ function processData(bars){
   }
   const auxEMA=ema(closes,20);
 
-  // ✅✅ 关键修复：EMA 只喂“有效点”，不要 value:null，避免连到0
   const auxPts=[];
   for(let i=0;i<bars.length;i++){
     const v=auxEMA[i];
     if(!isNaN(v)) auxPts.push({ time: bars[i].time, value: v });
   }
-  auxLineSeries.setData(auxPts);
+  auxLineSeries.setData(normalizePoints(auxPts));
 
-  // 主线 ext（你原来的平滑主线）
+  // main ext (WMA smoothing)
   const period=14;
   const p=Math.max(2, Math.floor(Math.sqrt(period)));
 
@@ -394,7 +427,7 @@ function processData(bars){
     if(cnt>0) ext[i]=sum/cnt;
   }
 
-  // trend by CLOSE slope（你要求）
+  // trend by CLOSE slope
   const N=5;
   const trend=new Array(closes.length).fill(0);
   for(let i=1;i<closes.length;i++){
@@ -410,36 +443,33 @@ function processData(bars){
     else trend[i]=trend[i-1];
   }
 
-  // ✅✅ 关键修复：用“skip点”的方式实现 EMPTY_VALUE（不会再出现竖线）
+  // Up/Dn points (EMPTY_VALUE by skipping points)
   const upPts=[];
   const dnPts=[];
   for(let i=0;i<bars.length;i++){
     const v=ext[i];
     if(isNaN(v)) continue;
-    if(trend[i]>0) upPts.push({ time: bars[i].time, value: v });
-    else if(trend[i]<0) dnPts.push({ time: bars[i].time, value: v });
-    else{
-      // trend==0：继承上一根方向
-      const prev = i>0 ? trend[i-1] : 1;
-      if(prev>=0) upPts.push({ time: bars[i].time, value: v });
-      else dnPts.push({ time: bars[i].time, value: v });
-    }
 
-    // 为了让拐点切换处更“不断线”，把边界点补一笔（类似你 MT 的 x+1）
+    // boundary stitch (like MT x+1) but safe: we'll normalize later
     if(i>0 && trend[i]!==trend[i-1] && !isNaN(ext[i-1])){
       const tPrev=bars[i-1].time;
       const vPrev=ext[i-1];
-      if(trend[i]>0){
-        upPts.push({ time: tPrev, value: vPrev });
-      }else if(trend[i]<0){
-        dnPts.push({ time: tPrev, value: vPrev });
-      }
+      if(trend[i]>0) upPts.push({ time:tPrev, value:vPrev });
+      else if(trend[i]<0) dnPts.push({ time:tPrev, value:vPrev });
+    }
+
+    if(trend[i]>0) upPts.push({ time: bars[i].time, value: v });
+    else if(trend[i]<0) dnPts.push({ time: bars[i].time, value: v });
+    else{
+      const prev=i>0?trend[i-1]:1;
+      if(prev>=0) upPts.push({ time: bars[i].time, value: v });
+      else dnPts.push({ time: bars[i].time, value: v });
     }
   }
-  mainUp.setData(upPts);
-  mainDn.setData(dnPts);
+  mainUp.setData(normalizePoints(upPts));
+  mainDn.setData(normalizePoints(dnPts));
 
-  // ✅✅ B/S：用 MT “拐点规则”（时间正序等价）
+  // B/S: MT pivot rule (time ascending equivalent)
   const markers=[];
   for(let i=1;i<bars.length-1;i++){
     const a=ext[i-1], b=ext[i], c=ext[i+1];
@@ -451,9 +481,8 @@ function processData(bars){
         time: bars[i].time,
         text: "B",
         position: "belowBar",
-        color: "#ff2bd6",         // 更亮（DeepPink风格）
-        shape: "arrowUp",
-        size: 2                   // 你的版本不支持也没关系，会自动忽略
+        color: "#ff2bd6",
+        shape: "arrowUp"
       });
     }
     // S: local maxima
@@ -462,38 +491,27 @@ function processData(bars){
         time: bars[i].time,
         text: "S",
         position: "aboveBar",
-        color: "#ffe600",         // 更亮（Yellow）
-        shape: "arrowDown",
-        size: 2
+        color: "#ffe600",
+        shape: "arrowDown"
       });
     }
   }
   candle.setMarkers(markers);
 
-  // latest signal：用最近一个拐点作为信号（与你 MT 的 Show_BS 更一致）
+  // latest signal: last pivot
   let latestSignal=null;
   for(let i=bars.length-2;i>=1;i--){
     const a=ext[i-1], b=ext[i], c=ext[i+1];
     if(isNaN(a)||isNaN(b)||isNaN(c)) continue;
 
     if(b < a && b <= c){
-      latestSignal={
-        side:"B",
-        confidence:0.85,
-        signal_price:bars[i].low,
-        entry_price:bars[i].low*1.002,
-        risk:{ entry:bars[i].low*1.002, stop:bars[i].low*0.93, targets:[bars[i].low*1.07, bars[i].low*1.16, bars[i].low*1.28] }
-      };
+      latestSignal={ side:"B", confidence:0.85, signal_price:bars[i].low, entry_price:bars[i].low*1.002,
+        risk:{ entry:bars[i].low*1.002, stop:bars[i].low*0.93, targets:[bars[i].low*1.07, bars[i].low*1.16, bars[i].low*1.28] } };
       break;
     }
     if(b > a && b >= c){
-      latestSignal={
-        side:"S",
-        confidence:0.85,
-        signal_price:bars[i].high,
-        entry_price:bars[i].high*0.998,
-        risk:{ entry:bars[i].high*0.998, stop:bars[i].high*1.07, targets:[bars[i].high*0.93, bars[i].high*0.84, bars[i].high*0.72] }
-      };
+      latestSignal={ side:"S", confidence:0.85, signal_price:bars[i].high, entry_price:bars[i].high*0.998,
+        risk:{ entry:bars[i].high*0.998, stop:bars[i].high*1.07, targets:[bars[i].high*0.93, bars[i].high*0.84, bars[i].high*0.72] } };
       break;
     }
   }
@@ -519,7 +537,7 @@ function processData(bars){
   document.getElementById("pulseCircle").style.borderColor = pulse.color;
   document.getElementById("pulseLabel").innerText = latestSignal ? `Market Pulse · 市场情绪: ${pulse.label}` : "Loading… / 加载中…";
 
-  // risk copilot
+  // risk
   const risk=latestSignal?.risk || null;
   document.getElementById("riskEntry").innerText = risk ? fmt(risk.entry) : "--";
   document.getElementById("riskStop").innerText = risk ? fmt(risk.stop) : "--";
