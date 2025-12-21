@@ -29,9 +29,6 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 .box{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel2);}
 .kv{display:flex;justify-content:space-between;gap:10px;margin:6px 0;font-size:13px}
 .kv .k{color:var(--muted)} .kv .v{font-weight:900}
-.row{display:flex;gap:8px;margin-top:10px}
-.toggle{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--panel2);font-size:13px;}
-.toggle input{transform:scale(1.05)}
 .badge{font-size:11px;padding:3px 8px;border-radius:999px;background:#26304a;border:1px solid rgba(255,255,255,.08);color:#cfe8ff;}
 #chartWrap{position:relative;height:100%;}
 #chartBox{position:absolute;inset:0;display:flex;flex-direction:column;}
@@ -170,6 +167,7 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.style.display = "none", 3000);
 }
+
 function setHint(msg) { document.getElementById("hint").innerText = msg; }
 function fmt(n) {
   if (n === null || n === undefined || isNaN(n)) return "--";
@@ -196,16 +194,10 @@ let candle = chart.addCandlestickSeries({
   borderVisible: false
 });
 
-/**
- * ✅ 主线“变色”必须用两条 LineSeries 互斥显示：
- * - 上涨段 -> mainUp (绿) 有 value；mainDn (红) 空白
- * - 下跌段 -> mainDn (红) 有 value；mainUp (绿) 空白
- * 这样视觉是“一条线变色”，不会红绿并行
- */
-let mainUp = chart.addLineSeries({ color: GREEN, lineWidth: 3 });
-let mainDn = chart.addLineSeries({ color: RED, lineWidth: 3 });
+// ✅✅ 主线只保留“一根”
+let mainLine = chart.addLineSeries({ color: RED, lineWidth: 3 });
 
-// ✅ 辅线：EMA(20) 固定黄色
+// ✅ 黄色辅线不变
 let auxLineSeries = chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
 
 let riskPriceLines = [];
@@ -232,36 +224,20 @@ function calcMarketPulse(latest) {
 function startSubscription() {
   const plan = document.getElementById("plan").value;
   let url = "";
+  if (plan === "halfmonthly") url = "https://buy.stripe.com/4gM3cxdskbQm35Y0DWg7e03";
+  else if (plan === "monthly") url = "https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02";
+  else if (plan === "annual") url = "https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01";
+  else if (plan === "lifetime") url = "https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00";
 
-  if (plan === "halfmonthly") {
-    url = "https://buy.stripe.com/4gM3cxdskbQm35Y0DWg7e03";
-  } else if (plan === "monthly") {
-    url = "https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02";
-  } else if (plan === "annual") {
-    url = "https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01";
-  } else if (plan === "lifetime") {
-    url = "https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00";
-  }
-
-  if (url) {
-    showToast("Redirecting to payment · 跳转支付中...");
-    window.location.href = url;
-  } else {
-    showToast("Please select a plan · 请先选择套餐");
-  }
+  if (url) { showToast("Redirecting to payment · 跳转支付中..."); window.location.href = url; }
+  else showToast("Please select a plan · 请先选择套餐");
 }
 
 function copyShareLink() {
-  try {
-    navigator.clipboard.writeText(window.location.href);
-    showToast("Link copied · 已复制分享链接");
-  } catch {
-    showToast("Copy failed · 复制失败");
-  }
+  try { navigator.clipboard.writeText(window.location.href); showToast("Link copied · 已复制分享链接"); }
+  catch { showToast("Copy failed · 复制失败"); }
 }
-function exportChartPNG() {
-  showToast("Export PNG · 导出图片（占位）");
-}
+function exportChartPNG() { showToast("Export PNG · 导出图片（占位）"); }
 
 let currentSymbol = "BTCUSDT";
 let currentTf = "1d";
@@ -270,11 +246,7 @@ let ws = null;
 function getBinanceInterval(tf) { return tf; }
 
 function generateSimulatedData(symbol, tf) {
-  const tfSeconds = {
-    "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400,
-    "1d": 86400, "1w": 604800, "1M": 2592000
-  }[tf] || 86400;
-
+  const tfSeconds = {"5m":300,"15m":900,"30m":1800,"1h":3600,"4h":14400,"1d":86400,"1w":604800,"1M":2592000}[tf] || 86400;
   const num_bars = tf === "1M" ? 120 : 200;
   const now = Math.floor(Date.now() / 1000);
   const base = symbol.includes("BTC") ? 67000 : 205;
@@ -297,7 +269,6 @@ function generateSimulatedData(symbol, tf) {
 
     bars.push({ time: time + i * tfSeconds, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2) });
   }
-
   return bars;
 }
 
@@ -359,11 +330,19 @@ function connectWebSocket(symbol, tf) {
         close: parseFloat(k.c)
       };
       candle.update(newBar);
-      // ✅ 保持与你原逻辑一致：不做实时重算（否则要维护bars数组）
+      // 与你原逻辑一致：不实时重算（否则需维护bars数组）
     } catch {}
   };
 
   ws.onclose = () => setTimeout(() => connectWebSocket(symbol, tf), 3000);
+}
+
+// ✅ 用更稳一点的趋势判断：看最近 N 根收盘的净变化（避免一根K线噪声导致频繁红绿闪）
+function decideTrendColor(bars, lookback = 5) {
+  if (!bars || bars.length < lookback + 1) return RED;
+  const a = bars[bars.length - 1].close;
+  const b = bars[bars.length - 1 - lookback].close;
+  return (a >= b) ? GREEN : RED;
 }
 
 function processData(bars) {
@@ -386,7 +365,7 @@ function processData(bars) {
     return res;
   }
 
-  // === 主线 ext（你的算法不变）===
+  // === ext 主线（算法不变）===
   const wma_half = wma(closes, Math.floor(period / 2));
   const wma_full = wma(closes, period);
   const vect = new Array(closes.length).fill(NaN);
@@ -405,54 +384,28 @@ function processData(bars) {
     if (count > 0) ext[i] = sum / count;
   }
 
-  // === 辅线 EMA20（黄色固定）===
+  // === 主线只画一条 ===
+  const mainData = ext.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v }));
+  mainLine.setData(mainData);
+
+  // ✅ 根据当前趋势给主线换色：看最近5根净变化
+  const trendColor = decideTrendColor(bars, 5);
+  mainLine.applyOptions({ color: trendColor });
+
+  // === EMA20 黄色固定 ===
   function ema(arr, per) {
     const res = new Array(arr.length).fill(NaN);
     const k = 2 / (per + 1);
     let sum = 0;
     for (let i = 0; i < per; i++) sum += arr[i];
     res[per - 1] = sum / per;
-    for (let i = per; i < arr.length; i++) {
-      res[i] = arr[i] * k + res[i - 1] * (1 - k);
-    }
+    for (let i = per; i < arr.length; i++) res[i] = arr[i] * k + res[i - 1] * (1 - k);
     return res;
   }
   const auxEMA = ema(closes, 20);
   auxLineSeries.setData(auxEMA.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v })));
 
-  /**
-   * ✅✅ 关键修复：主线分段变色（严格互斥）
-   * 规则：本bar close >= 上一bar close -> 绿；否则 -> 红
-   * 注意：不允许 filter()，否则会跨空白乱连，出现你截图那种“并行/第三条线”的错觉
-   */
-  const upData = [];
-  const dnData = [];
-
-  for (let i = 0; i < bars.length; i++) {
-    const t = bars[i].time;
-    const v = ext[i];
-
-    if (i === 0 || isNaN(v) || isNaN(ext[i - 1])) {
-      upData.push({ time: t });
-      dnData.push({ time: t });
-      continue;
-    }
-
-    const isUp = bars[i].close >= bars[i - 1].close;
-
-    if (isUp) {
-      upData.push({ time: t, value: v });
-      dnData.push({ time: t });        // 红线严格空白
-    } else {
-      upData.push({ time: t });        // 绿线严格空白
-      dnData.push({ time: t, value: v });
-    }
-  }
-
-  mainUp.setData(upData);
-  mainDn.setData(dnData);
-
-  // === 交叉检测产生B/S标记（保留原逻辑：ext vs EMA20）===
+  // === B/S 标记（保留 ext vs EMA20）===
   const markers = [];
   for (let i = 1; i < closes.length; i++) {
     if (!isNaN(ext[i]) && !isNaN(ext[i - 1]) && !isNaN(auxEMA[i]) && !isNaN(auxEMA[i - 1])) {
@@ -465,7 +418,7 @@ function processData(bars) {
   }
   candle.setMarkers(markers);
 
-  // === 最新信号（基于最近交叉）===
+  // === 最新信号 ===
   let latestSignal = null;
   for (let x = closes.length - 2; x >= 1; x--) {
     if (!isNaN(ext[x]) && !isNaN(ext[x - 1]) && !isNaN(auxEMA[x]) && !isNaN(auxEMA[x - 1])) {
@@ -491,7 +444,6 @@ function processData(bars) {
     }
   }
 
-  // === 左侧信号展示（BUY绿 / SELL红）===
   const box = document.getElementById("signals");
   box.innerHTML = "";
   if (latestSignal) {
@@ -506,13 +458,11 @@ function processData(bars) {
     box.innerHTML = "<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
   }
 
-  // === Market Pulse ===
   const pulse = calcMarketPulse(latestSignal);
   document.getElementById("pulseCircle").innerText = pulse.value;
   document.getElementById("pulseCircle").style.borderColor = pulse.color;
   document.getElementById("pulseLabel").innerText = `Market Pulse · 市场情绪: ${pulse.label}`;
 
-  // === Risk Copilot ===
   const risk = latestSignal?.risk || null;
   document.getElementById("riskEntry").innerText = risk ? fmt(risk.entry) : "--";
   document.getElementById("riskStop").innerText = risk ? fmt(risk.stop) : "--";
