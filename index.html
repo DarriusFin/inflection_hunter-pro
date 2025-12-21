@@ -67,7 +67,7 @@ button.ghost{background:#1e2533;}
 
   <div id="topRight">
     <span id="status">Free Version / 免费版</span>
-    <button id="manageBtn" class="topBtn" style="display:none" onclick="cancelSubscription()">Manage / Cancel</button>
+    <button id="manageBtn" class="topBtn" style="display:none">Manage / Cancel</button>
     <button id="upgradeBtn" class="topBtn primary" onclick="startSubscription()">Start Trial / Upgrade · 试用/升级</button>
     <span id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</span>
   </div>
@@ -132,12 +132,12 @@ button.ghost{background:#1e2533;}
     <label class="small"><b>Plan</b> / 套餐</label>
     <select id="plan">
       <option value="halfmonthly">Half-monthly / 半月 - $9.9</option>
-      <option value="monthly" selected>Monthly / 月付 - $19.9</option>
-      <option value="annual">Annual / 年付 - $199</option>
-      <option value="lifetime">Lifetime / 终身 - $499</option>
+      <option value="monthly">Monthly / 月付 - $19.99</option>
+      <option value="annual">Annual / 年付 - $99</option>
+      <option value="lifetime">Lifetime / 终身 - $299</option>
     </select>
 
-    <div class="smallTxt">点击顶部按钮跳转支付（当前测试模式）</div>
+    <div class="smallTxt">点击顶部“试用/升级”立即跳转支付</div>
 
     <div class="hr"></div>
 
@@ -212,7 +212,7 @@ function calcMarketPulse(latest) {
   return { label: "Bearish / 强空", value: v, color: "#ff4757" };
 }
 
-let isPro = false;
+let isPro = localStorage.getItem('ih_pro') === 'true';
 function updateProStatus() {
   const status = document.getElementById("status");
   const upgradeBtn = document.getElementById("upgradeBtn");
@@ -220,7 +220,7 @@ function updateProStatus() {
   const pinCheck = document.getElementById("pinRisk");
   const alertHint = document.getElementById("alertHint");
   if (isPro) {
-    status.innerText = "Pro Activated / 专业版已激活";
+    status.innerText = "Pro Activated · Real-time / 专业版已激活";
     status.style.background = "linear-gradient(90deg,#00ff88,#00d4ff)";
     status.style.color = "#000";
     upgradeBtn.style.display = "none";
@@ -235,71 +235,39 @@ function updateProStatus() {
     manageBtn.style.display = "none";
     alertHint.innerText = "Pro only / 专业版功能";
     pinCheck.disabled = true;
-    pinCheck.checked = false;
   }
 }
 
+// 真实订阅跳转
 function startSubscription() {
   const plan = document.getElementById("plan").value;
-  showToast(`模拟开通 ${plan} 成功！`);
+  let url = "";
+
+  if (plan === "halfmonthly") {
+    url = "https://buy.stripe.com/4gM3cxdskbQm35Y0DWg7e03"; // 半月 $9.9
+  } else if (plan === "monthly") {
+    url = "https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02"; // 月付 $19.99
+  } else if (plan === "annual") {
+    url = "https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01"; // 年付 $99
+  } else if (plan === "lifetime") {
+    url = "https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00"; // 终身 $299
+  }
+
+  if (url) {
+    showToast("跳转支付页面中...");
+    window.location.href = url;
+  }
+}
+
+// 支付成功后激活（建议在Stripe Success URL加 ?success=1，然后检查）
+if (new URLSearchParams(window.location.search).get('success') === '1') {
+  localStorage.setItem('ih_pro', 'true');
   isPro = true;
-  updateProStatus();
-  reload();
-}
-
-function cancelSubscription() {
-  if (confirm("确认取消订阅？")) {
-    isPro = false;
-    updateProStatus();
-    showToast("订阅已取消");
-    reload();
-  }
-}
-
-function generateData(symbol, tf) {
-  const num_bars = 200;
-  const interval = tf === "60" ? 3600 : 86400;
-  const now = Math.floor(Date.now() / 1000);
-  const isCrypto = symbol.toUpperCase().includes("BTC") || symbol.toUpperCase().includes("ETH");
-  const isNVDA = symbol.toUpperCase().includes("NVDA");
-  let base = isCrypto ? 67000 : isNVDA ? 205 : 170;
-  let volatility = isCrypto ? 0.025 : 0.012;
-
-  const bars = [];
-  let price = base;
-  let time = now - num_bars * interval;  // 从过去开始
-
-  for (let i = 0; i < num_bars; i++) {
-    const trend_factor = Math.sin(i / 20) * base * 0.015;
-    const noise = (Math.random() - 0.5) * base * volatility;
-    price += trend_factor + noise;
-    price = Math.max(price, base * 0.5);
-    const open = price;
-    const close = price + (Math.random() - 0.5) * base * 0.006;
-    const high = Math.max(open, close) + Math.random() * base * 0.01;
-    const low = Math.min(open, close) - Math.random() * base * 0.01;
-    bars.push({ time: time, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2) });
-    time += interval;
-  }
-
-  // 核心算法保持不变（已优化）
-
-  // ... (WMA, vect, ext, trend, uptrend, dntrend 计算同上)
-
-  // 标记和信号生成（B belowBar, S aboveBar）
-
-  return { bars, markers, signals: signals.reverse(), trendLines: { up: up_line, dn: dn_line }, latest: signals[0] || null, backtest: { winrate: 0.72 } };
-}
-
-async function reload() {
-  // 同上完整 reload 函数
-  // 确保 candle.setData(data.bars); 等调用正常
-
-  showToast("主图已加载！有K线 + 绿红切换 + B/S标记");
+  showToast("支付成功！Pro 已激活");
 }
 
 updateProStatus();
-reload();
+reload(); // 启动加载图表
 </script>
 </body>
 </html>
