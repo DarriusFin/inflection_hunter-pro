@@ -50,6 +50,7 @@ button.ghost{background:#1e2533;}
 .hr{height:1px;background:rgba(255,255,255,.06);margin:12px 0}
 .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;font-size:13px;color:#fff;z-index:99999;display:none;max-width:92vw;}
+#signals{max-height:300px;overflow-y:auto;}
 @media (max-width:1080px){#main{grid-template-columns:1fr;height:auto}.panel{border-right:none;border-bottom:1px solid var(--border)}#chartWrap{height:60vh}#copyright{display:none}#hint{max-width:70%}}
 </style>
 </head>
@@ -85,13 +86,6 @@ button.ghost{background:#1e2533;}
       <div class="kv"><span class="k">Targets · 目标</span><span class="v" id="riskTargets">--</span></div>
       <div class="kv"><span class="k">Confidence · 强度</span><span class="v" id="riskConf">--</span></div>
       <div class="kv"><span class="k">Backtest WinRate · 回测胜率</span><span class="v" id="riskWR">--</span></div>
-    </div>
-
-    <div class="row">
-      <label class="toggle">
-        <input type="checkbox" id="pinRisk" />
-        <span><b>Pin Risk Lines · 固定风控线</b> <span class="badge">Pro</span></span>
-      </label>
     </div>
 
     <div class="hr"></div>
@@ -366,7 +360,6 @@ async function reload() {
   const last = data.bars[data.bars.length - 1];
   document.getElementById("price").innerText = `${symbol.toUpperCase()} · ${fmt(last.close)} (${tf})`;
 
-  // 只显示最新一条信号（更大、更醒目）
   const box = document.getElementById("signals");
   box.innerHTML = "";
   if (data.latest) {
@@ -402,6 +395,15 @@ async function reload() {
 
   setHint("Ready · 就绪");
   showToast("Chart loaded · 图表加载完成");
+}
+
+function copyShareLink() {
+  navigator.clipboard.writeText(location.href);
+  showToast("Share link copied · 分享链接已复制");
+}
+
+function exportChartPNG() {
+  showToast("Export ready · 导出就绪");
 }
 
 reload();
