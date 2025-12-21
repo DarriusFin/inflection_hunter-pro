@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
-:root{--bg:#0b0f17;--panel:#141a24;--panel2:#0f1522;--border:#2a3244;--text:#e6edf3;--muted:#9aa4b2;--green:#00ff88;--red:#ff4757;--blue:#00d4ff;}
+:root{--bg:#0b0f17;--panel:#141a24;--panel2:#0f1522;--border:#2a3244;--text:#e6edf3;--muted:#9aa4b2;--green:#00ff88;--red:#ff4757;--blue:#00d4ff;--orange:#ffaa00;}
 *{box-sizing:border-box}
 body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
 #topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:rgba(20,26,36,.95);border-bottom:1px solid var(--border);gap:12px;}
@@ -188,6 +188,8 @@ let chart = LightweightCharts.createChart(document.getElementById("chart"), {
 let candle = chart.addCandlestickSeries({ upColor: "#00ff88", downColor: "#ff4757", wickUpColor: "#00ff88", wickDownColor: "#ff4757", borderVisible: false });
 let upLine = chart.addLineSeries({ color: "#00ff88", lineWidth: 3 });
 let dnLine = chart.addLineSeries({ color: "#ff4757", lineWidth: 3 });
+let auxLineSeries = chart.addLineSeries({ color: "#ffaa00", lineWidth: 2 }); // 辅助线：橘黄色固定
+
 let riskPriceLines = [];
 
 function clearRiskLines() {
@@ -240,7 +242,6 @@ function getBinanceInterval(tf) {
   return tf;
 }
 
-// 模拟数据 fallback
 function generateSimulatedData(symbol, tf) {
   const tfSeconds = {
     "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400, "1d": 86400, "1w": 604800, "1M": 2592000
@@ -289,7 +290,7 @@ async function loadHistoricalData(symbol, tf) {
       candle.setData(bars);
       processData(bars);
       setHint("Binance data loaded · Binance数据加载完成");
-      return; // 成功退出
+      return;
     } catch (e) {
       retries--;
       if (retries === 0) {
@@ -299,7 +300,7 @@ async function loadHistoricalData(symbol, tf) {
         processData(simBars);
         setHint("Simulated data (Binance unavailable) · 模拟数据 (Binance不可用)");
       } else {
-        await new Promise(r => setTimeout(r, 2000)); // 重试等待
+        await new Promise(r => setTimeout(r, 2000));
       }
     }
   }
@@ -324,17 +325,15 @@ function connectWebSocket(symbol, tf) {
         close: parseFloat(k.c)
       };
       candle.update(newBar);
-      const allBars = [...candle.data()];
+      const allBars = candle.data();
       if (allBars.length >= 50) processData(allBars);
     } catch {}
   };
 
   ws.onclose = () => setTimeout(() => connectWebSocket(symbol, tf), 3000);
-  ws.onerror = () => {};
 }
 
 function processData(bars) {
-  // 完整VIDYA算法置入
   if (bars.length < 30) return;
 
   const closes = bars.map(b => b.close);
@@ -400,27 +399,58 @@ function processData(bars) {
   upLine.setData(up_line);
   dnLine.setData(dn_line);
 
-  // 最新信号
+  // 辅助线：EMA(20) 橘黄色固定
+  function ema(arr, per) {
+    const res = new Array(arr.length).fill(NaN);
+    const k = 2 / (per + 1);
+    let sum = 0;
+    for (let i = 0; i < per; i++) sum += arr[i];
+    res[per - 1] = sum / per;
+    for (let i = per; i < arr.length; i++) {
+      res[i] = arr[i] * k + res[i - 1] * (1 - k);
+    }
+    return res;
+  }
+  const auxEMA = ema(closes, 20);
+  const aux_data = auxEMA.map((v, i) => ({ time: bars[i].time, value: v })).filter(o => !isNaN(o.value));
+  auxLineSeries.setData(aux_data);
+
+  // 交叉检测产生B/S标记
+  const markers = [];
+  for (let i = 1; i < closes.length; i++) {
+    if (!isNaN(ext[i]) && !isNaN(ext[i-1]) && !isNaN(auxEMA[i]) && !isNaN(auxEMA[i-1])) {
+      if (ext[i-1] <= auxEMA[i-1] && ext[i] > auxEMA[i]) {
+        markers.push({ time: bars[i].time, text: "B", position: "belowBar", color: "#00ff88", shape: "circle" });
+      } else if (ext[i-1] >= auxEMA[i-1] && ext[i] < auxEMA[i]) {
+        markers.push({ time: bars[i].time, text: "S", position: "aboveBar", color: "#ff4757", shape: "circle" });
+      }
+    }
+  }
+  candle.setMarkers(markers);
+
+  // 最新信号（基于最新交叉）
   let latestSignal = null;
   for (let x = closes.length - 2; x >= 1; x--) {
-    if (trend[x] > 0 && trend[x - 1] <= 0) {
-      latestSignal = {
-        side: "B",
-        confidence: 0.85,
-        signal_price: bars[x].low,
-        entry_price: bars[x].low * 1.002,
-        risk: { entry: bars[x].low * 1.002, stop: bars[x].low * 0.93, targets: [bars[x].low * 1.07, bars[x].low * 1.16, bars[x].low * 1.28] }
-      };
-      break;
-    } else if (trend[x] < 0 && trend[x - 1] >= 0) {
-      latestSignal = {
-        side: "S",
-        confidence: 0.85,
-        signal_price: bars[x].high,
-        entry_price: bars[x].high * 0.998,
-        risk: { entry: bars[x].high * 0.998, stop: bars[x].high * 1.07, targets: [bars[x].high * 0.93, bars[x].high * 0.84, bars[x].high * 0.72] }
-      };
-      break;
+    if (!isNaN(ext[x]) && !isNaN(ext[x-1]) && !isNaN(auxEMA[x]) && !isNaN(auxEMA[x-1])) {
+      if (ext[x-1] <= auxEMA[x-1] && ext[x] > auxEMA[x]) {
+        latestSignal = {
+          side: "B",
+          confidence: 0.85,
+          signal_price: bars[x].low,
+          entry_price: bars[x].low * 1.002,
+          risk: { entry: bars[x].low * 1.002, stop: bars[x].low * 0.93, targets: [bars[x].low * 1.07, bars[x].low * 1.16, bars[x].low * 1.28] }
+        };
+        break;
+      } else if (ext[x-1] >= auxEMA[x-1] && ext[x] < auxEMA[x]) {
+        latestSignal = {
+          side: "S",
+          confidence: 0.85,
+          signal_price: bars[x].high,
+          entry_price: bars[x].high * 0.998,
+          risk: { entry: bars[x].high * 0.998, stop: bars[x].high * 1.07, targets: [bars[x].high * 0.93, bars[x].high * 0.84, bars[x].high * 0.72] }
+        };
+        break;
+      }
     }
   }
 
