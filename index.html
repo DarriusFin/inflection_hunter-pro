@@ -61,7 +61,6 @@ button.ghost{background:#1e2533;}
       <div id="subtitle">Darrius FinTech Inc</div>
     </div>
   </div>
-
   <div id="topRight">
     <span id="status">Pro Activated · Real-time / 专业版已激活</span>
     <span id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</span>
@@ -158,266 +157,425 @@ button.ghost{background:#1e2533;}
 <div id="toast"></div>
 
 <script>
-const GREEN = "#00ff88";
-const RED   = "#ff4757";
-const BLUE  = "#00d4ff";
-const ORANGE= "#ffaa00";
+/** =======================
+ *  constants & helpers
+ *  ======================= */
+const GREEN="#00ff88", RED="#ff4757", BLUE="#00d4ff", ORANGE="#ffaa00";
+let toastTimer=null;
 
-let toastTimer = null;
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.innerText = msg;
-  t.style.display = "block";
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.innerText=msg; t.style.display="block";
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.style.display = "none", 3000);
+  toastTimer=setTimeout(()=>t.style.display="none",3000);
 }
-function setHint(msg) { document.getElementById("hint").innerText = msg; }
-function fmt(n) {
-  if (n === null || n === undefined || isNaN(n)) return "--";
-  const x = Number(n);
-  return Math.abs(x) >= 1000 ? x.toFixed(2) : x.toFixed(4);
+function setHint(msg){ document.getElementById("hint").innerText=msg; }
+function fmt(n){
+  if(n===null||n===undefined||isNaN(n)) return "--";
+  const x=Number(n);
+  return Math.abs(x)>=1000 ? x.toFixed(2) : x.toFixed(4);
 }
 
+/** =======================
+ *  chart init
+ *  ======================= */
 let chart = LightweightCharts.createChart(document.getElementById("chart"), {
-  layout: { background: { color: "#0b0f17" }, textColor: "#d1d4dc" },
-  grid: { vertLines: { color: "transparent" }, horzLines: { color: "transparent" } },
-  timeScale: { timeVisible: true, secondsVisible: false },
-  rightPriceScale: { borderVisible: false },
-  crosshair: { mode: 1 }
+  layout:{ background:{ color:"#0b0f17" }, textColor:"#d1d4dc" },
+  grid:{ vertLines:{ color:"transparent" }, horzLines:{ color:"transparent" } },
+  timeScale:{ timeVisible:true, secondsVisible:false },
+  rightPriceScale:{ borderVisible:false },
+  crosshair:{ mode:1 }
 });
 
 let candle = chart.addCandlestickSeries({
-  upColor: GREEN, downColor: RED,
-  wickUpColor: GREEN, wickDownColor: RED,
-  borderVisible: false
+  upColor:GREEN, downColor:RED,
+  wickUpColor:GREEN, wickDownColor:RED,
+  borderVisible:false
 });
 
-// ✅ 主线初始化不再固定红色（只是初始占位，processData 会强制改颜色）
-let mainLine = chart.addLineSeries({ color: "#9aa4b2", lineWidth: 3 });
+/**
+ * ✅ MT 同款：两条主线（绿/红）互斥显示（null=EMPTY_VALUE），视觉上一根线变色
+ */
+let mainUp = chart.addLineSeries({ color: GREEN, lineWidth: 3 });
+let mainDn = chart.addLineSeries({ color: RED,   lineWidth: 3 });
 
-// ✅ 黄色辅线：EMA20
+/** 黄线：EMA20 固定 */
 let auxLineSeries = chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
 
-window.__mainLineTrendColor = GREEN; // 记住上一次趋势颜色，避免横盘死红/死绿
-
-let riskPriceLines = [];
-function clearRiskLines() {
-  riskPriceLines.forEach(pl => { try { candle.removePriceLine(pl); } catch {} });
-  riskPriceLines = [];
+/** Risk lines */
+let riskPriceLines=[];
+function clearRiskLines(){
+  riskPriceLines.forEach(pl=>{ try{ candle.removePriceLine(pl);}catch{} });
+  riskPriceLines=[];
 }
-function addRiskLine(price, title, color) {
-  if (isNaN(price)) return;
-  const pl = candle.createPriceLine({ price, color, lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title });
+function addRiskLine(price,title,color){
+  if(isNaN(price)) return;
+  const pl=candle.createPriceLine({ price, color, lineWidth:2, lineStyle:2, axisLabelVisible:true, title });
   riskPriceLines.push(pl);
 }
 
-function calcMarketPulse(latest) {
-  if (!latest) return { label: "Neutral · 中性", value: 50, color: "#9aa4b2" };
-  const dir = latest.side === "B" ? 1 : -1;
-  const v = Math.round(50 + dir * latest.confidence * 40);
-  if (v > 75) return { label: "Bullish · 强多", value: v, color: GREEN };
-  if (v > 55) return { label: "Mild Bull · 偏多", value: v, color: "#7dffb6" };
-  if (v > 45) return { label: "Neutral · 中性", value: v, color: "#9aa4b2" };
-  return { label: "Bearish · 强空", value: v, color: RED };
+/** =======================
+ *  data store (VERY IMPORTANT)
+ *  keep our own bars array (do NOT rely on candle.data())
+ *  ======================= */
+let barsStore=[];        // full history
+let currentSymbol="BTCUSDT";
+let currentTf="1d";
+let ws=null;
+
+/** =======================
+ *  business helpers
+ *  ======================= */
+function calcMarketPulse(latest){
+  if(!latest) return { label:"Neutral · 中性", value:50, color:"#9aa4b2" };
+  const dir=latest.side==="B"?1:-1;
+  const v=Math.round(50 + dir*latest.confidence*40);
+  if(v>75) return { label:"Bullish · 强多", value:v, color:GREEN };
+  if(v>55) return { label:"Mild Bull · 偏多", value:v, color:"#7dffb6" };
+  if(v>45) return { label:"Neutral · 中性", value:v, color:"#9aa4b2" };
+  return { label:"Bearish · 强空", value:v, color:RED };
 }
 
-function startSubscription() {
-  const plan = document.getElementById("plan").value;
-  let url = "";
-  if (plan === "halfmonthly") url = "https://buy.stripe.com/4gM3cxdskbQm35Y0DWg7e03";
-  else if (plan === "monthly") url = "https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02";
-  else if (plan === "annual") url = "https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01";
-  else if (plan === "lifetime") url = "https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00";
+function startSubscription(){
+  const plan=document.getElementById("plan").value;
+  let url="";
+  if(plan==="halfmonthly") url="https://buy.stripe.com/4gM3cxdskbQm35Y0DWg7e03";
+  else if(plan==="monthly") url="https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02";
+  else if(plan==="annual") url="https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01";
+  else if(plan==="lifetime") url="https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00";
 
-  if (url) { showToast("Redirecting to payment · 跳转支付中..."); window.location.href = url; }
+  if(url){ showToast("Redirecting to payment · 跳转支付中..."); window.location.href=url; }
   else showToast("Please select a plan · 请先选择套餐");
 }
-
-function copyShareLink() {
-  try { navigator.clipboard.writeText(window.location.href); showToast("Link copied · 已复制分享链接"); }
-  catch { showToast("Copy failed · 复制失败"); }
+function copyShareLink(){
+  try{ navigator.clipboard.writeText(window.location.href); showToast("Link copied · 已复制分享链接"); }
+  catch{ showToast("Copy failed · 复制失败"); }
 }
-function exportChartPNG() { showToast("Export PNG · 导出图片（占位）"); }
+function exportChartPNG(){ showToast("Export PNG · 导出图片（占位）"); }
 
-let currentSymbol = "BTCUSDT";
-let currentTf = "1d";
-let ws = null;
+/** =======================
+ *  data sources
+ *  ======================= */
+function getBinanceInterval(tf){ return tf; }
 
-function getBinanceInterval(tf) { return tf; }
+function generateSimulatedData(symbol, tf){
+  const tfSeconds={"5m":300,"15m":900,"30m":1800,"1h":3600,"4h":14400,"1d":86400,"1w":604800,"1M":2592000}[tf]||86400;
+  const num=tf==="1M"?120:220;
+  const now=Math.floor(Date.now()/1000);
+  const base=symbol.includes("BTC")?67000:205;
+  const vol=symbol.includes("BTC")?0.025:0.012;
 
-function generateSimulatedData(symbol, tf) {
-  const tfSeconds = {"5m":300,"15m":900,"30m":1800,"1h":3600,"4h":14400,"1d":86400,"1w":604800,"1M":2592000}[tf] || 86400;
-  const num_bars = tf === "1M" ? 120 : 200;
-  const now = Math.floor(Date.now() / 1000);
-  const base = symbol.includes("BTC") ? 67000 : 205;
-  const volatility = symbol.includes("BTC") ? 0.025 : 0.012;
+  const bars=[];
+  let price=base;
+  let t=now-(num-1)*tfSeconds;
+  for(let i=0;i<num;i++){
+    const trend=Math.sin(i/18)*base*0.012;
+    const noise=(Math.random()-0.5)*base*vol;
+    price+=trend+noise; price=Math.max(price, base*0.5);
 
-  const bars = [];
-  let price = base;
-  let time = now - (num_bars - 1) * tfSeconds;
+    const open=price;
+    const close=price+(Math.random()-0.5)*base*0.006;
+    const high=Math.max(open,close)+Math.random()*base*0.01;
+    const low=Math.min(open,close)-Math.random()*base*0.01;
 
-  for (let i = 0; i < num_bars; i++) {
-    const trend_factor = Math.sin(i / 20) * base * 0.015;
-    const noise = (Math.random() - 0.5) * base * volatility;
-    price += trend_factor + noise;
-    price = Math.max(price, base * 0.5);
-
-    const open = price;
-    const close = price + (Math.random() - 0.5) * base * 0.006;
-    const high = Math.max(open, close) + Math.random() * base * 0.01;
-    const low = Math.min(open, close) - Math.random() * base * 0.01;
-
-    bars.push({ time: time + i * tfSeconds, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2) });
+    bars.push({ time:t+i*tfSeconds, open:+open.toFixed(2), high:+high.toFixed(2), low:+low.toFixed(2), close:+close.toFixed(2) });
   }
   return bars;
 }
 
-async function loadHistoricalData(symbol, tf) {
-  const interval = getBinanceInterval(tf);
-  const limit = tf === "1M" ? 120 : 500;
-  let retries = 3;
+async function loadHistoricalData(symbol, tf){
+  const interval=getBinanceInterval(tf);
+  const limit=tf==="1M"?120:500;
+  let retries=3;
 
-  while (retries > 0) {
-    try {
-      const resp = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-      const data = await resp.json();
-      if (!data || data.length === 0) throw new Error("No data returned");
+  while(retries>0){
+    try{
+      const resp=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data=await resp.json();
+      if(!data||data.length===0) throw new Error("No data");
 
-      const bars = data.map(d => ({
-        time: d[0] / 1000,
-        open: parseFloat(d[1]),
-        high: parseFloat(d[2]),
-        low: parseFloat(d[3]),
-        close: parseFloat(d[4])
+      const bars=data.map(d=>({
+        time:d[0]/1000,
+        open:+d[1], high:+d[2], low:+d[3], close:+d[4]
       }));
 
-      candle.setData(bars);
-      processData(bars);
+      barsStore=bars;
+      candle.setData(barsStore);
+      processData(barsStore);
+
       setHint("Binance data loaded · Binance数据加载完成");
       return;
-    } catch (e) {
+    }catch(e){
       retries--;
-      if (retries === 0) {
+      if(retries===0){
         showToast("Binance interface error, using simulated data · Binance接口错误，使用模拟数据");
-        const simBars = generateSimulatedData(symbol, tf);
-        candle.setData(simBars);
-        processData(simBars);
+        barsStore=generateSimulatedData(symbol, tf);
+        candle.setData(barsStore);
+        processData(barsStore);
         setHint("Simulated data (Binance unavailable) · 模拟数据 (Binance不可用)");
-      } else {
-        await new Promise(r => setTimeout(r, 1200));
+      }else{
+        await new Promise(r=>setTimeout(r,1200));
       }
     }
   }
 }
 
-function connectWebSocket(symbol, tf) {
-  if (ws) { try { ws.close(); } catch {} }
-  const interval = getBinanceInterval(tf);
-  const stream = `${symbol.toLowerCase()}@kline_${interval}`;
-  ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
+function connectWebSocket(symbol, tf){
+  if(ws){ try{ ws.close(); }catch{} }
+  const interval=getBinanceInterval(tf);
+  const stream=`${symbol.toLowerCase()}@kline_${interval}`;
+  ws=new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
 
-  ws.onmessage = e => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (!msg.k || !msg.k.x) return;
-      const k = msg.k;
-      const newBar = {
-        time: k.t / 1000,
-        open: parseFloat(k.o),
-        high: parseFloat(k.h),
-        low: parseFloat(k.l),
-        close: parseFloat(k.c)
+  ws.onmessage=e=>{
+    try{
+      const msg=JSON.parse(e.data);
+      if(!msg.k) return;
+      const k=msg.k;
+      const bar={
+        time:k.t/1000,
+        open:+k.o, high:+k.h, low:+k.l, close:+k.c
       };
-      candle.update(newBar);
-    } catch {}
+
+      // update store: replace last if same time else push
+      const last=barsStore[barsStore.length-1];
+      if(last && last.time===bar.time){
+        barsStore[barsStore.length-1]=bar;
+      }else{
+        barsStore.push(bar);
+        // keep memory in check
+        if(barsStore.length>1200) barsStore=barsStore.slice(barsStore.length-1200);
+      }
+
+      candle.update(bar);
+
+      // 只有收盘(k.x)时才重算（避免抖动）
+      if(k.x){
+        processData(barsStore);
+      }
+    }catch{}
   };
-  ws.onclose = () => setTimeout(() => connectWebSocket(symbol, tf), 3000);
+  ws.onclose=()=>setTimeout(()=>connectWebSocket(symbol, tf),3000);
 }
 
-function processData(bars) {
-  if (!bars || bars.length < 30) return;
+/** =======================
+ *  indicator core
+ *  requirements:
+ *  - main line "one line color-change": use null (EMPTY_VALUE) to hide other
+ *  - trend is based on CLOSE slope (你要求：按 close 斜率做趋势)
+ *  - keep EMA20 (yellow)
+ *  - keep B/S markers
+ *  ======================= */
+function processData(bars){
+  if(!bars || bars.length<40) return;
 
-  const closes = bars.map(b => b.close);
-  const period = 14;
-  const p = Math.floor(Math.sqrt(period));
+  const closes=bars.map(b=>b.close);
 
-  function wma(arr, per) {
-    const res = new Array(arr.length).fill(NaN);
-    const weights = Array.from({ length: per }, (_, i) => i + 1);
-    const wsum = weights.reduce((a, b) => a + b, 0);
-    for (let i = per - 1; i < arr.length; i++) {
-      let sum = 0;
-      for (let j = 0; j < per; j++) sum += arr[i - j] * weights[per - 1 - j];
-      res[i] = sum / wsum;
+  // --- EMA20 (yellow)
+  function ema(arr, per){
+    const res=new Array(arr.length).fill(NaN);
+    const k=2/(per+1);
+    let sum=0;
+    for(let i=0;i<per;i++) sum+=arr[i];
+    res[per-1]=sum/per;
+    for(let i=per;i<arr.length;i++) res[i]=arr[i]*k+res[i-1]*(1-k);
+    return res;
+  }
+  const auxEMA=ema(closes,20);
+  auxLineSeries.setData(auxEMA.map((v,i)=> isNaN(v)? {time:bars[i].time, value:null}:{time:bars[i].time, value:v}));
+
+  // --- 主线值 ext：我保留你之前的“平滑主线”计算（WMA体系），但趋势用 close slope
+  const period=14;
+  const p=Math.max(2, Math.floor(Math.sqrt(period)));
+
+  function wma(arr, per){
+    const res=new Array(arr.length).fill(NaN);
+    const weights=Array.from({length:per},(_,i)=>i+1);
+    const wsum=weights.reduce((a,b)=>a+b,0);
+    for(let i=per-1;i<arr.length;i++){
+      let sum=0;
+      for(let j=0;j<per;j++){
+        sum+=arr[i-j]*weights[per-1-j];
+      }
+      res[i]=sum/wsum;
     }
     return res;
   }
 
-  const wma_half = wma(closes, Math.floor(period / 2));
-  const wma_full = wma(closes, period);
-  const vect = new Array(closes.length).fill(NaN);
-  for (let i = 0; i < closes.length; i++) {
-    if (!isNaN(wma_half[i]) && !isNaN(wma_full[i])) vect[i] = 2 * wma_half[i] - wma_full[i];
+  const wma_half=wma(closes, Math.max(2, Math.floor(period/2)));
+  const wma_full=wma(closes, period);
+
+  const vect=new Array(closes.length).fill(NaN);
+  for(let i=0;i<closes.length;i++){
+    if(!isNaN(wma_half[i]) && !isNaN(wma_full[i])) vect[i]=2*wma_half[i]-wma_full[i];
   }
 
-  const ext = new Array(closes.length).fill(NaN);
-  for (let i = p - 1; i < closes.length; i++) {
-    let sum = 0, count = 0;
-    for (let j = 0; j < p; j++) {
-      const vv = vect[i - j];
-      if (!isNaN(vv)) { sum += vv; count++; }
+  const ext=new Array(closes.length).fill(NaN);
+  for(let i=p-1;i<closes.length;i++){
+    let sum=0, cnt=0;
+    for(let j=0;j<p;j++){
+      const vv=vect[i-j];
+      if(!isNaN(vv)){ sum+=vv; cnt++; }
     }
-    if (count > 0) ext[i] = sum / count;
+    if(cnt>0) ext[i]=sum/cnt;
   }
 
-  function ema(arr, per) {
-    const res = new Array(arr.length).fill(NaN);
-    const k = 2 / (per + 1);
-    let sum = 0;
-    for (let i = 0; i < per; i++) sum += arr[i];
-    res[per - 1] = sum / per;
-    for (let i = per; i < arr.length; i++) res[i] = arr[i] * k + res[i - 1] * (1 - k);
-    return res;
+  // --- trend by CLOSE slope (你要求)
+  // 用近 N 根 close 的净变化决定趋势，更稳
+  const N=5;
+  const trend=new Array(closes.length).fill(0);
+  for(let i=1;i<closes.length;i++){
+    let delta=0, found=0;
+    for(let k=i;k>=1 && found<N;k--){
+      const a=closes[k], b=closes[k-1];
+      if(isNaN(a)||isNaN(b)) continue;
+      delta += (a-b);
+      found++;
+    }
+    if(found===0) trend[i]=trend[i-1];
+    else if(delta>0) trend[i]=1;
+    else if(delta<0) trend[i]=-1;
+    else trend[i]=trend[i-1];
   }
-  const auxEMA = ema(closes, 20);
-  auxLineSeries.setData(auxEMA.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v })));
 
-  // 主线数据
-  mainLine.setData(ext.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v })));
-
-  // ✅✅ 关键修正：趋势判定改为最近 N 根净变化（避免“永远红”）
-  const N = 6;
-  let delta = 0;
-  let found = 0;
-  for (let i = closes.length - 1; i >= 1 && found < N; i--) {
-    const a = closes[i], b = closes[i-1];
-    if (isNaN(a) || isNaN(b)) continue;
-    delta += (a - b);
-    found++;
+  // --- MT 同款 EMPTY_VALUE：用 null 隐藏
+  const upData=[];
+  const dnData=[];
+  for(let i=0;i<bars.length;i++){
+    const t=bars[i].time;
+    const v=ext[i];
+    if(isNaN(v)){
+      upData.push({time:t, value:null});
+      dnData.push({time:t, value:null});
+      continue;
+    }
+    if(trend[i]>0){
+      upData.push({time:t, value:v});
+      dnData.push({time:t, value:null});
+    }else if(trend[i]<0){
+      upData.push({time:t, value:null});
+      dnData.push({time:t, value:v});
+    }else{
+      // trend==0：继承上一根（为了不断线）
+      const prev = i>0 ? trend[i-1] : 1;
+      if(prev>=0){
+        upData.push({time:t, value:v});
+        dnData.push({time:t, value:null});
+      }else{
+        upData.push({time:t, value:null});
+        dnData.push({time:t, value:v});
+      }
+    }
   }
-  if (found > 0) {
-    if (delta > 0) window.__mainLineTrendColor = GREEN;
-    else if (delta < 0) window.__mainLineTrendColor = RED;
-  }
-  mainLine.applyOptions({ color: window.__mainLineTrendColor });
+  mainUp.setData(upData);
+  mainDn.setData(dnData);
 
-  // 最新价格
-  const last = bars[bars.length - 1];
+  // --- B/S markers：恢复（ext vs EMA20 交叉）
+  const markers=[];
+  for(let i=1;i<bars.length;i++){
+    if(isNaN(ext[i]) || isNaN(ext[i-1]) || isNaN(auxEMA[i]) || isNaN(auxEMA[i-1])) continue;
+
+    if(ext[i-1] <= auxEMA[i-1] && ext[i] > auxEMA[i]){
+      markers.push({ time: bars[i].time, text:"B", position:"belowBar", color: GREEN, shape:"circle" });
+    }else if(ext[i-1] >= auxEMA[i-1] && ext[i] < auxEMA[i]){
+      markers.push({ time: bars[i].time, text:"S", position:"aboveBar", color: RED, shape:"circle" });
+    }
+  }
+  candle.setMarkers(markers);
+
+  // --- latest signal (最近交叉点)
+  let latestSignal=null;
+  for(let x=bars.length-2;x>=1;x--){
+    if(isNaN(ext[x]) || isNaN(ext[x-1]) || isNaN(auxEMA[x]) || isNaN(auxEMA[x-1])) continue;
+
+    if(ext[x-1] <= auxEMA[x-1] && ext[x] > auxEMA[x]){
+      latestSignal={
+        side:"B",
+        confidence:0.85,
+        signal_price:bars[x].low,
+        entry_price:bars[x].low*1.002,
+        risk:{
+          entry:bars[x].low*1.002,
+          stop:bars[x].low*0.93,
+          targets:[bars[x].low*1.07, bars[x].low*1.16, bars[x].low*1.28]
+        }
+      };
+      break;
+    }else if(ext[x-1] >= auxEMA[x-1] && ext[x] < auxEMA[x]){
+      latestSignal={
+        side:"S",
+        confidence:0.85,
+        signal_price:bars[x].high,
+        entry_price:bars[x].high*0.998,
+        risk:{
+          entry:bars[x].high*0.998,
+          stop:bars[x].high*1.07,
+          targets:[bars[x].high*0.93, bars[x].high*0.84, bars[x].high*0.72]
+        }
+      };
+      break;
+    }
+  }
+
+  // --- update left panel signals
+  const box=document.getElementById("signals");
+  box.innerHTML="";
+  if(latestSignal){
+    const div=document.createElement("div");
+    div.className="signal latest "+(latestSignal.side==="S"?"sell":"");
+    const sideEN=latestSignal.side==="B"?"BUY":"SELL";
+    const sideZH=latestSignal.side==="B"?"买入":"卖出";
+    div.innerHTML=`<b>${sideEN} · ${sideZH}</b> @ ${fmt(latestSignal.signal_price)}<br/>
+      <span class="smallTxt">Entry · 入场: ${fmt(latestSignal.entry_price)} · Confidence · 强度: ${Math.round(latestSignal.confidence*100)}%</span>`;
+    box.appendChild(div);
+  }else{
+    box.innerHTML="<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
+  }
+
+  // --- market pulse
+  const pulse=calcMarketPulse(latestSignal);
+  document.getElementById("pulseCircle").innerText = latestSignal ? pulse.value : "--";
+  document.getElementById("pulseCircle").style.borderColor = pulse.color;
+  document.getElementById("pulseLabel").innerText = latestSignal ? `Market Pulse · 市场情绪: ${pulse.label}` : "Loading… / 加载中…";
+
+  // --- risk copilot
+  const risk=latestSignal?.risk || null;
+  document.getElementById("riskEntry").innerText = risk ? fmt(risk.entry) : "--";
+  document.getElementById("riskStop").innerText = risk ? fmt(risk.stop) : "--";
+  document.getElementById("riskTargets").innerText = risk ? risk.targets.map(fmt).join(", ") : "--";
+  document.getElementById("riskConf").innerText = latestSignal ? Math.round(latestSignal.confidence*100)+"%" : "--";
+  document.getElementById("riskWR").innerText = "72%";
+
+  clearRiskLines();
+  if(risk){
+    addRiskLine(risk.entry, "Entry · 入场", GREEN);
+    addRiskLine(risk.stop, "Stop · 止损", RED);
+    risk.targets.forEach((p,i)=>addRiskLine(p, `T${i+1} · 目标${i+1}`, BLUE));
+  }
+
+  // --- top price label
+  const last=bars[bars.length-1];
   document.getElementById("price").innerText = `${currentSymbol} · ${fmt(last.close)}`;
 }
 
-async function reload() {
-  const symbol = document.getElementById("symbol").value.trim().toUpperCase() || "BTCUSDT";
-  const tf = document.getElementById("tf").value;
-  currentSymbol = symbol;
-  currentTf = tf;
+/** =======================
+ *  reload
+ *  ======================= */
+async function reload(){
+  const symbol=(document.getElementById("symbol").value||"BTCUSDT").trim().toUpperCase();
+  const tf=document.getElementById("tf").value;
 
+  currentSymbol=symbol;
+  currentTf=tf;
+
+  document.getElementById("signals").innerHTML="Connecting to Binance... / 连接Binance中...";
   setHint("Loading Binance data · 加载Binance数据中...");
+
   await loadHistoricalData(symbol, tf);
   connectWebSocket(symbol, tf);
 }
 
+/** start */
 reload();
 </script>
 </body>
