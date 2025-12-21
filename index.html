@@ -42,14 +42,14 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 input,select,button{width:100%;margin:6px 0;padding:10px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;}
 button{cursor:pointer;font-weight:900;}
 button.primary{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;padding:16px;font-size:16px;}
+button.load-btn{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;padding:16px;font-size:16px;}
 button.ghost{background:#1e2533;}
-.signal{border-left:4px solid var(--green);padding:10px;margin:8px 0;background:var(--panel2);border-radius:10px;font-size:13px;border:1px solid rgba(255,255,255,0.06);}
-.signal.sell{border-left-color:var(--red)}
+.signal.latest{border-left:6px solid var(--green);padding:16px;margin:12px 0;background:var(--panel2);border-radius:12px;font-size:15px;font-weight:900;}
+.signal.latest.sell{border-left-color:var(--red);}
 .smallTxt{font-size:12px;color:var(--muted);line-height:1.5;}
 .hr{height:1px;background:rgba(255,255,255,.06);margin:12px 0}
 .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;font-size:13px;color:#fff;z-index:99999;display:none;max-width:92vw;}
-#signals{max-height:300px;overflow-y:auto;}
 @media (max-width:1080px){#main{grid-template-columns:1fr;height:auto}.panel{border-right:none;border-bottom:1px solid var(--border)}#chartWrap{height:60vh}#copyright{display:none}#hint{max-width:70%}}
 </style>
 </head>
@@ -125,7 +125,7 @@ button.ghost{background:#1e2533;}
       <option value="1D" selected>1D · 日线</option>
     </select>
 
-    <button class="ghost" onclick="reload()">Load · 加载</button>
+    <button class="load-btn" onclick="reload()">Load · 加载</button>
 
     <div class="hr"></div>
 
@@ -366,16 +366,20 @@ async function reload() {
   const last = data.bars[data.bars.length - 1];
   document.getElementById("price").innerText = `${symbol.toUpperCase()} · ${fmt(last.close)} (${tf})`;
 
+  // 只显示最新一条信号（更大、更醒目）
   const box = document.getElementById("signals");
   box.innerHTML = "";
-  data.signals.slice(0, 12).forEach(x => {
+  if (data.latest) {
     const div = document.createElement("div");
-    div.className = "signal " + (x.side === "S" ? "sell" : "");
-    const sideEN = x.side === "B" ? "BUY" : "SELL";
-    const sideZH = x.side === "B" ? "买入" : "卖出";
-    div.innerHTML = `<b>${sideEN} · ${sideZH}</b> @ ${fmt(x.signal_price)}<br/><span class="smallTxt">Entry · 入场: ${fmt(x.entry_price)} · Conf · 强度: ${Math.round(x.confidence * 100)}%</span>`;
+    div.className = "signal latest " + (data.latest.side === "S" ? "sell" : "");
+    const sideEN = data.latest.side === "B" ? "BUY" : "SELL";
+    const sideZH = data.latest.side === "B" ? "买入" : "卖出";
+    div.innerHTML = `<b>${sideEN} · ${sideZH}</b> @ ${fmt(data.latest.signal_price)}<br/>
+                     <span class="smallTxt">Entry · 入场: ${fmt(data.latest.entry_price)} · Confidence · 强度: ${Math.round(data.latest.confidence * 100)}%</span>`;
     box.appendChild(div);
-  });
+  } else {
+    box.innerHTML = "<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
+  }
 
   const pulse = calcMarketPulse(data.latest);
   document.getElementById("pulseCircle").innerText = pulse.value;
