@@ -29,9 +29,6 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 .box{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel2);}
 .kv{display:flex;justify-content:space-between;gap:10px;margin:6px 0;font-size:13px}
 .kv .k{color:var(--muted)} .kv .v{font-weight:900}
-.row{display:flex;gap:8px;margin-top:10px}
-.toggle{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--panel2);font-size:13px;}
-.toggle input{transform:scale(1.05)}
 .badge{font-size:11px;padding:3px 8px;border-radius:999px;background:#26304a;border:1px solid rgba(255,255,255,.08);color:#cfe8ff;}
 #chartWrap{position:relative;height:100%;}
 #chartBox{position:absolute;inset:0;display:flex;flex-direction:column;}
@@ -170,7 +167,6 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.style.display = "none", 3000);
 }
-
 function setHint(msg) { document.getElementById("hint").innerText = msg; }
 function fmt(n) {
   if (n === null || n === undefined || isNaN(n)) return "--";
@@ -178,7 +174,6 @@ function fmt(n) {
   return Math.abs(x) >= 1000 ? x.toFixed(2) : x.toFixed(4);
 }
 
-// ===== Chart init (series only created ONCE) =====
 let chart = LightweightCharts.createChart(document.getElementById("chart"), {
   layout: { background: { color: "#0b0f17" }, textColor: "#d1d4dc" },
   grid: { vertLines: { color: "transparent" }, horzLines: { color: "transparent" } },
@@ -195,11 +190,11 @@ let candle = chart.addCandlestickSeries({
   borderVisible: false
 });
 
-// 绿色 / 红色：同一条拐点线 ext 的“分段显示”
+// 主线（按“价格涨跌”分段）：绿 / 红
 let upLine = chart.addLineSeries({ color: "#00ff88", lineWidth: 3 });
 let dnLine = chart.addLineSeries({ color: "#ff4757", lineWidth: 3 });
 
-// 黄色辅助均线（保持不变）
+// 黄色均线：EMA(20) 固定
 let auxLineSeries = chart.addLineSeries({ color: "#ffaa00", lineWidth: 2 });
 
 let riskPriceLines = [];
@@ -227,15 +222,10 @@ function startSubscription() {
   const plan = document.getElementById("plan").value;
   let url = "";
 
-  if (plan === "halfmonthly") {
-    url = "https://buy.stripe.com/4gM3cxdskbQm35Y0DWg7e03";
-  } else if (plan === "monthly") {
-    url = "https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02";
-  } else if (plan === "annual") {
-    url = "https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01";
-  } else if (plan === "lifetime") {
-    url = "https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00";
-  }
+  if (plan === "halfmonthly") url = "https://buy.stripe.com/4gM3cxdskbQm35Y0DWg7e03";
+  else if (plan === "monthly") url = "https://buy.stripe.com/cNi3cxdsk2fM6ia3Q8g7e02";
+  else if (plan === "annual") url = "https://buy.stripe.com/5kQ14p3RKf2y6iaeuMg7e01";
+  else if (plan === "lifetime") url = "https://buy.stripe.com/7sY6oJfAs4nU8qi9asg7e00";
 
   if (url) {
     showToast("Redirecting to payment · 跳转支付中...");
@@ -247,21 +237,16 @@ function startSubscription() {
 
 function copyShareLink() {
   try {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(window.location.href);
     showToast("Link copied · 已复制分享链接");
   } catch {
     showToast("Copy failed · 复制失败");
   }
 }
-
-async function exportChartPNG() {
-  // Lightweight Charts 本身不直接导出PNG；这里做一个“占位实现”
-  // 你后续若要真实导出：可用 html2canvas 或把 chart 容器转 canvas
+function exportChartPNG() {
   showToast("Export is a placeholder · 导出功能占位");
 }
 
-// ===== data source =====
 let currentSymbol = "BTCUSDT";
 let currentTf = "1d";
 let ws = null;
@@ -269,10 +254,7 @@ let ws = null;
 function getBinanceInterval(tf) { return tf; }
 
 function generateSimulatedData(symbol, tf) {
-  const tfSeconds = {
-    "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400, "1d": 86400, "1w": 604800, "1M": 2592000
-  }[tf] || 86400;
-
+  const tfSeconds = {"5m":300,"15m":900,"30m":1800,"1h":3600,"4h":14400,"1d":86400,"1w":604800,"1M":2592000}[tf] || 86400;
   const num_bars = tf === "1M" ? 120 : 200;
   const now = Math.floor(Date.now() / 1000);
   const base = symbol.includes("BTC") ? 67000 : 205;
@@ -293,13 +275,7 @@ function generateSimulatedData(symbol, tf) {
     const high = Math.max(open, close) + Math.random() * base * 0.01;
     const low = Math.min(open, close) - Math.random() * base * 0.01;
 
-    bars.push({
-      time: time + i * tfSeconds,
-      open: +open.toFixed(2),
-      high: +high.toFixed(2),
-      low: +low.toFixed(2),
-      close: +close.toFixed(2)
-    });
+    bars.push({ time: time + i * tfSeconds, open:+open.toFixed(2), high:+high.toFixed(2), low:+low.toFixed(2), close:+close.toFixed(2) });
   }
   return bars;
 }
@@ -312,9 +288,9 @@ async function loadHistoricalData(symbol, tf) {
   while (retries > 0) {
     try {
       const resp = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      if (!data || data.length === 0) throw new Error("No data returned");
+      if (!data || data.length === 0) throw new Error("No data");
 
       const bars = data.map(d => ({
         time: d[0] / 1000,
@@ -349,11 +325,13 @@ function connectWebSocket(symbol, tf) {
   const stream = `${symbol.toLowerCase()}@kline_${interval}`;
   ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
 
+  // 这里保留你原来逻辑：只在K线收盘时更新 candle
   ws.onmessage = e => {
     try {
       const msg = JSON.parse(e.data);
-      if (!msg.k || !msg.k.x) return; // 只在K线收盘时更新
+      if (!msg.k) return;
       const k = msg.k;
+      if (!k.x) return; // 收盘才算
 
       const newBar = {
         time: k.t / 1000,
@@ -362,19 +340,16 @@ function connectWebSocket(symbol, tf) {
         low: parseFloat(k.l),
         close: parseFloat(k.c)
       };
-
       candle.update(newBar);
 
-      // Lightweight Charts v4 不保证 candle.data() 可用；这里保守处理：只做轻提示
-      // 如你需要“实时滚动完整指标”，建议自行维护 bars 数组（我也可以替你改）
-      setHint("Live update received · 收到实时更新");
+      // 重要说明：要“实时重算指标”，需要你自己维护 bars 数组。
+      // 目前保持和你原版一致：历史加载时算一次。
     } catch {}
   };
 
   ws.onclose = () => setTimeout(() => connectWebSocket(symbol, tf), 3000);
 }
 
-// ===== indicators & main logic =====
 function processData(bars) {
   if (!bars || bars.length < 30) return;
 
@@ -394,10 +369,11 @@ function processData(bars) {
     return res;
   }
 
-  // === ext 计算（你的拐点线核心）===
+  // ===== 主线 ext =====
   const wma_half = wma(closes, Math.floor(period / 2));
   const wma_full = wma(closes, period);
   const vect = new Array(closes.length).fill(NaN);
+
   for (let i = 0; i < closes.length; i++) {
     if (!isNaN(wma_half[i]) && !isNaN(wma_full[i])) vect[i] = 2 * wma_half[i] - wma_full[i];
   }
@@ -406,44 +382,13 @@ function processData(bars) {
   for (let i = p - 1; i < closes.length; i++) {
     let sum = 0, count = 0;
     for (let j = 0; j < p; j++) {
-      if (!isNaN(vect[i - j])) {
-        sum += vect[i - j];
-        count++;
-      }
+      const vv = vect[i - j];
+      if (!isNaN(vv)) { sum += vv; count++; }
     }
     if (count > 0) ext[i] = sum / count;
   }
 
-  // ✅ 关键修复：用 WhitespaceData 分段，且用 ext 的斜率决定红/绿
-  // 规则：上涨时只显示绿色；下跌时只显示红色；黄色不变
-  const upData = [];
-  const dnData = [];
-  for (let i = 0; i < bars.length; i++) {
-    const t = bars[i].time;
-    const v = ext[i];
-
-    // ext 不可用：两条都空白（不画）
-    if (v === null || v === undefined || isNaN(v) || i === 0 || isNaN(ext[i - 1])) {
-      upData.push({ time: t }); // whitespace
-      dnData.push({ time: t }); // whitespace
-      continue;
-    }
-
-    const isUp = v >= ext[i - 1]; // 用拐点线本身斜率判断颜色
-
-    if (isUp) {
-      upData.push({ time: t, value: v });
-      dnData.push({ time: t }); // whitespace
-    } else {
-      upData.push({ time: t }); // whitespace
-      dnData.push({ time: t, value: v });
-    }
-  }
-
-  upLine.setData(upData);
-  dnLine.setData(dnData);
-
-  // === 黄色辅助线：EMA(20) 固定不变 ===
+  // ===== 黄色 EMA20 固定 =====
   function ema(arr, per) {
     const res = new Array(arr.length).fill(NaN);
     const k = 2 / (per + 1);
@@ -456,13 +401,41 @@ function processData(bars) {
     return res;
   }
   const auxEMA = ema(closes, 20);
-  const aux_data = auxEMA.map((v, i) => {
-    const t = bars[i].time;
-    return (v === null || v === undefined || isNaN(v)) ? ({ time: t }) : ({ time: t, value: v });
-  });
+  const aux_data = auxEMA.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v }));
   auxLineSeries.setData(aux_data);
 
-  // === 交叉检测产生B/S标记（ext vs EMA20）===
+  // ✅✅ 关键修复：主线绿/红由“价格涨跌”决定（不是 ext 斜率）
+  // 规则：close 上行 -> 绿线显示；close 下行 -> 红线显示；另一条用 whitespace 断开
+  const upData = [];
+  const dnData = [];
+
+  for (let i = 0; i < bars.length; i++) {
+    const t = bars[i].time;
+    const v = ext[i];
+
+    // ext 还没算出来：两条都空白
+    if (isNaN(v) || i === 0) {
+      upData.push({ time: t });
+      dnData.push({ time: t });
+      continue;
+    }
+
+    // 价格方向（你要的“上涨/下跌”）
+    const isPriceUp = bars[i].close >= bars[i - 1].close;
+
+    if (isPriceUp) {
+      upData.push({ time: t, value: v });
+      dnData.push({ time: t });
+    } else {
+      upData.push({ time: t });
+      dnData.push({ time: t, value: v });
+    }
+  }
+
+  upLine.setData(upData);
+  dnLine.setData(dnData);
+
+  // === B/S 标记：仍按 ext vs EMA20 交叉（保持你原逻辑）===
   const markers = [];
   for (let i = 1; i < closes.length; i++) {
     if (!isNaN(ext[i]) && !isNaN(ext[i-1]) && !isNaN(auxEMA[i]) && !isNaN(auxEMA[i-1])) {
@@ -475,7 +448,7 @@ function processData(bars) {
   }
   candle.setMarkers(markers);
 
-  // === 最新信号（基于最近一次交叉）===
+  // === 最新信号（保持你原版）===
   let latestSignal = null;
   for (let x = closes.length - 2; x >= 1; x--) {
     if (!isNaN(ext[x]) && !isNaN(ext[x-1]) && !isNaN(auxEMA[x]) && !isNaN(auxEMA[x-1])) {
@@ -538,7 +511,6 @@ function processData(bars) {
   document.getElementById("price").innerText = `${currentSymbol} · ${fmt(last.close)}`;
 }
 
-// ===== control =====
 async function reload() {
   const symbol = document.getElementById("symbol").value.trim().toUpperCase() || "BTCUSDT";
   const tf = document.getElementById("tf").value;
