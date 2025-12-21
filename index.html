@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<title>Inflection Hunter Pro v6.3.3b (Overlay Enhanced) │ Darrius FinTech Inc</title>
+<title>Inflection Hunter Pro v6.3.3c (Overlay + Pulse Gauge + Aux(8)) │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -25,6 +25,7 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 .panel h3{margin:0 0 12px;font-size:14px;color:var(--green);display:flex;align-items:center;gap:8px;}
 .panel h3::before{content:"◆";font-size:11px;opacity:.9}
 
+/* Market Pulse: number + donut gauge */
 #pulse{display:flex;align-items:center;justify-content:center;height:180px;}
 .pulseWrap{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center;}
 #pulseCircle{position:absolute;inset:14px;border-radius:50%;border:10px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;background:rgba(0,0,0,.25);z-index:3;}
@@ -32,7 +33,6 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 #pulseGauge svg{width:150px;height:150px;display:block;}
 #pulseGauge .track{stroke:rgba(255,255,255,.10);stroke-width:10;fill:none;}
 #pulseGauge .progress{stroke:var(--green);stroke-width:10;fill:none;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(0,255,136,.35));}
-
 #pulseLabel{text-align:center;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.4;}
 
 .box{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel2);}
@@ -177,10 +177,11 @@ button.ghost{background:#1e2533;}
       </div>
       <div>
         <div class="inlineLabel">Period · 周期</div>
-        <input id="auxPeriod" type="number" min="2" max="200" value="12" />
+        <!-- ✅ 默认改成 8 -->
+        <input id="auxPeriod" type="number" min="2" max="200" value="8" />
       </div>
     </div>
-    <div class="mini">说明：Period=12 + EMA(ext) 会明显靠近 B/S 拐点。</div>
+    <div class="mini">说明：Period=8 + EMA(ext) 会更贴近 B/S 拐点。</div>
 
     <div class="hr"></div>
 
@@ -242,18 +243,27 @@ function calcMarketPulse(latest){
   return { label:"Bearish · 强空", value:v, color:RED };
 }
 
-function updatePulseGauge(value, color){
+/* ✅✅ Donut Gauge：进度环 + 自动偏绿/偏红 */
+function updatePulseGauge(value){
+  const v=clamp(Number(value)||0,0,100);
+
+  // 颜色：>50 越高越绿，<50 越低越红，50中性灰
+  let color="#9aa4b2";
+  if(v>55) color=GREEN;
+  else if(v<45) color=RED;
+
   const circle=document.getElementById("pulseCircle");
   const prog=document.getElementById("pulseProgress");
   const radius=46;
   const C=2*Math.PI*radius;
-  const v=clamp(Number(value)||0,0,100);
   const offset=C*(1-v/100);
-  prog.style.stroke=color||"#9aa4b2";
-  prog.style.filter=`drop-shadow(0 0 8px ${color||"#9aa4b2"}55)`;
-  prog.setAttribute("stroke-dasharray", String(C.toFixed(0)));
+
+  prog.style.stroke=color;
+  prog.style.filter=`drop-shadow(0 0 10px ${color}55)`;
+  prog.setAttribute("stroke-dasharray", String(Math.round(C)));
   prog.setAttribute("stroke-dashoffset", String(offset));
-  circle.style.borderColor=color||"#9aa4b2";
+
+  circle.style.borderColor=color;
 }
 
 /** chart init */
@@ -315,6 +325,7 @@ function drawColoredMainLine(){
     ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   }
 }
+
 function drawPivotsBig(){
   const piv=overlayState.pivots||[];
   if(!piv.length) return;
@@ -329,7 +340,7 @@ function drawPivotsBig(){
 
     const isB=m.type==="B";
     const fill=isB?"#ff2bd6":"#ffe600";
-    const stroke="rgba(0,0,0,0.75)";
+    const stroke="rgba(0,0,0,0.78)";
 
     ctx.save();
     ctx.shadowColor=fill;
@@ -343,6 +354,7 @@ function drawPivotsBig(){
     ctx.restore();
   }
 }
+
 function redrawOverlay(){
   clearCanvas();
   drawColoredMainLine();
@@ -501,6 +513,7 @@ function processData(bars){
 
   const closes=bars.map(b=>b.close);
 
+  // ext (HMA-like core)
   const period=14;
   const p=Math.max(2,Math.floor(Math.sqrt(period)));
   function wma(arr, per){
@@ -531,6 +544,7 @@ function processData(bars){
     if(cnt>0) ext[i]=sum/cnt;
   }
 
+  // trend by close slope (N bars sum)
   const N=5;
   const trend=new Array(closes.length).fill(0);
   for(let i=1;i<closes.length;i++){
@@ -546,9 +560,9 @@ function processData(bars){
     else trend[i]=trend[i-1];
   }
 
+  // aux line: EMA(ext) or EMA(close)  (default period now 8)
   const auxSource=document.getElementById("auxSource").value;
-  const auxPer=clamp(parseInt(document.getElementById("auxPeriod").value||"12",10),2,200);
-
+  const auxPer=clamp(parseInt(document.getElementById("auxPeriod").value||"8",10),2,200);
   const baseArr=(auxSource==="ext")?ext:closes;
   const safeBase=baseArr.map(v=>isNaN(v)?0:v);
   const aux=ema(safeBase, auxPer);
@@ -565,33 +579,24 @@ function processData(bars){
   }
   auxLineSeries.setData(auxPts);
 
+  // pivots (MT-ish)
   const atr=calcATR(bars,14);
-
-  const oPts=[];
-  for(let i=0;i<bars.length;i++){
-    const v=ext[i];
-    if(isNaN(v)) continue;
-    const tr=(trend[i]===0?(i>0?trend[i-1]:1):trend[i]);
-    oPts.push({ time: bars[i].time, value: v, trend: tr>=0?1:-1 });
-  }
-
-  const cooldown=8;
   const piv=[];
+  const cooldown=8;
+
   function tryPushPivot(i,type){
     const bExt=ext[i];
     if(isNaN(bExt)) return;
     const last=piv[piv.length-1];
-
     const a=atr[i];
     const atrv=(!isNaN(a)&&a>0)?a:(bars[i].high-bars[i].low);
     const pad=atrv*0.35;
-
     const priceLabel = (type==="B") ? (bars[i].low - pad) : (bars[i].high + pad);
     const cand={ time:bars[i].time, type, idx:i, extVal:bExt, priceLabel };
 
     if(!last){ piv.push(cand); return; }
     if(last.type===type && (cand.idx-last.idx)<=cooldown){
-      const better = (type==="B") ? (cand.extVal < last.extVal) : (cand.extVal > last.extVal);
+      const better=(type==="B") ? (cand.extVal < last.extVal) : (cand.extVal > last.extVal);
       if(better) piv[piv.length-1]=cand;
       return;
     }
@@ -605,8 +610,7 @@ function processData(bars){
     if(b>a && b>=c) tryPushPivot(i,"S");
   }
 
-  // ✅✅ 关键修复：不再 setMarkers，避免小字体 B/S 重复
-
+  // latest signal by last pivot
   let latestSignal=null;
   if(piv.length){
     const pv=piv[piv.length-1];
@@ -619,6 +623,7 @@ function processData(bars){
     }
   }
 
+  // left panel signal card
   const box=document.getElementById("signals");
   box.innerHTML="";
   if(latestSignal){
@@ -633,11 +638,13 @@ function processData(bars){
     box.innerHTML="<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
   }
 
+  // pulse number + donut
   const pulse=calcMarketPulse(latestSignal);
   document.getElementById("pulseCircle").innerText = latestSignal ? pulse.value : "--";
   document.getElementById("pulseLabel").innerText = latestSignal ? `Market Pulse · 市场情绪: ${pulse.label}` : "Loading… / 加载中…";
-  updatePulseGauge(latestSignal ? pulse.value : 0, pulse.color);
+  updatePulseGauge(latestSignal ? pulse.value : 0);
 
+  // risk panel + lines
   const risk=latestSignal?.risk || null;
   document.getElementById("riskEntry").innerText = risk ? fmt(risk.entry) : "--";
   document.getElementById("riskStop").innerText = risk ? fmt(risk.stop) : "--";
@@ -655,6 +662,14 @@ function processData(bars){
   const last=bars[bars.length-1];
   document.getElementById("price").innerText = `${currentSymbol} · ${fmt(last.close)}`;
 
+  // overlay points (only ext as mainline)
+  const oPts=[];
+  for(let i=0;i<bars.length;i++){
+    const v=ext[i];
+    if(isNaN(v)) continue;
+    const tr=(trend[i]===0?(i>0?trend[i-1]:1):trend[i]);
+    oPts.push({ time: bars[i].time, value: v, trend: tr>=0?1:-1 });
+  }
   overlayState.points=oPts;
   overlayState.pivots=piv.map(pv=>({ time:pv.time, type:pv.type, priceLabel:pv.priceLabel }));
 
@@ -676,9 +691,8 @@ document.getElementById("auxSource").addEventListener("change",()=>{ if(barsStor
 document.getElementById("auxPeriod").addEventListener("change",()=>{ if(barsStore.length) processData(barsStore); });
 
 resizeOverlay();
-updatePulseGauge(0, "#9aa4b2");
+updatePulseGauge(0);
 reload();
 </script>
 </body>
 </html>
-
