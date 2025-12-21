@@ -6,16 +6,160 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
-/* 样式保持不变（同上次完整版） */
 :root{--bg:#0b0f17;--panel:#141a24;--panel2:#0f1522;--border:#2a3244;--text:#e6edf3;--muted:#9aa4b2;--green:#00ff88;--red:#ff4757;--blue:#00d4ff;}
 *{box-sizing:border-box}
 body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
-/* ... 所有样式同之前 ... */
+#topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:rgba(20,26,36,.95);border-bottom:1px solid var(--border);gap:12px;}
+#brand{display:flex;align-items:center;gap:14px;min-width:260px;}
+#logo{font-size:26px;font-weight:900;background:linear-gradient(90deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px;}
+#brandMeta{line-height:1.1}
+#brandTitle{font-weight:900}
+#subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+#topRight{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:1;min-width:0;}
+#status{padding:7px 12px;border-radius:999px;font-size:12px;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;white-space:nowrap;}
+#copyright{font-size:12px;color:#fff;opacity:0.85;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);padding:6px 12px;border-radius:999px;white-space:nowrap;max-width:38vw;overflow:hidden;text-overflow:ellipsis;}
+#main{display:grid;grid-template-columns:320px 1fr 360px;height:calc(100vh - 64px);}
+.panel{background:var(--panel);border-right:1px solid var(--border);padding:16px;overflow:auto;}
+.panel:last-child{border-right:none;}
+.panel h3{margin:0 0 12px;font-size:14px;color:var(--green);display:flex;align-items:center;gap:8px;}
+.panel h3::before{content:"◆";font-size:11px;opacity:.9}
+#pulse{display:flex;align-items:center;justify-content:center;height:160px;}
+#pulseCircle{width:122px;height:122px;border-radius:50%;border:10px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;background:rgba(0,0,0,.25);}
+#pulseLabel{text-align:center;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.4;}
+.box{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel2);}
+.kv{display:flex;justify-content:space-between;gap:10px;margin:6px 0;font-size:13px}
+.kv .k{color:var(--muted)} .kv .v{font-weight:900}
+.row{display:flex;gap:8px;margin-top:10px}
+.toggle{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--panel2);font-size:13px;}
+.toggle input{transform:scale(1.05)}
+.badge{font-size:11px;padding:3px 8px;border-radius:999px;background:#26304a;border:1px solid rgba(255,255,255,.08);color:#cfe8ff;}
+#chartWrap{position:relative;height:100%;}
+#chartBox{position:absolute;inset:0;display:flex;flex-direction:column;}
+#chartTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;z-index:10;}
+#price{background:rgba(0,0,0,.6);padding:8px 12px;border-radius:12px;font-weight:900;border:1px solid rgba(255,255,255,0.10);}
+#hint{background:rgba(0,0,0,.55);padding:8px 12px;border-radius:12px;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.10);max-width:56%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#chart{flex:1;width:100%;}
+input,select,button{width:100%;margin:6px 0;padding:10px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;}
+button{cursor:pointer;font-weight:900;}
+button.primary{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;padding:16px;font-size:16px;}
+button.load-btn{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;padding:16px;font-size:16px;}
+button.ghost{background:#1e2533;}
+.signal.latest{border-left:6px solid var(--green);padding:16px;margin:12px 0;background:var(--panel2);border-radius:12px;font-size:15px;font-weight:900;}
+.signal.latest.sell{border-left-color:var(--red);}
+.smallTxt{font-size:12px;color:var(--muted);line-height:1.5;}
+.hr{height:1px;background:rgba(255,255,255,.06);margin:12px 0}
+.footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;font-size:13px;color:#fff;z-index:99999;display:none;max-width:92vw;}
+#signals{max-height:300px;overflow-y:auto;}
+@media (max-width:1080px){#main{grid-template-columns:1fr;height:auto}.panel{border-right:none;border-bottom:1px solid var(--border)}#chartWrap{height:60vh}#copyright{display:none}#hint{max-width:70%}}
 </style>
 </head>
 <body>
 
-<!-- HTML 结构保持不变（同上次） -->
+<div id="topbar">
+  <div id="brand">
+    <div id="logo">拐点猎手</div>
+    <div id="brandMeta">
+      <div id="brandTitle">Inflection Hunter Pro</div>
+      <div id="subtitle">Darrius FinTech Inc</div>
+    </div>
+  </div>
+
+  <div id="topRight">
+    <span id="status">Pro Activated · Real-time / 专业版已激活</span>
+    <span id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</span>
+  </div>
+</div>
+
+<div id="main">
+  <div class="panel">
+    <h3>Market Pulse · 市场情绪</h3>
+    <div id="pulse"><div id="pulseCircle">--</div></div>
+    <div id="pulseLabel">Loading… / 加载中…</div>
+
+    <div class="hr"></div>
+
+    <h3>Risk Copilot · 风控助手</h3>
+    <div class="box">
+      <div class="kv"><span class="k">Entry · 入场</span><span class="v" id="riskEntry">--</span></div>
+      <div class="kv"><span class="k">Stop · 止损</span><span class="v" id="riskStop">--</span></div>
+      <div class="kv"><span class="k">Targets · 目标</span><span class="v" id="riskTargets">--</span></div>
+      <div class="kv"><span class="k">Confidence · 强度</span><span class="v" id="riskConf">--</span></div>
+      <div class="kv"><span class="k">Backtest WinRate · 回测胜率</span><span class="v" id="riskWR">--</span></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3>Live Signals · 实时信号</h3>
+    <div id="signals">Connecting to Binance... / 连接Binance中...</div>
+
+    <div class="footer">
+      <b>Disclaimer · 免责声明:</b> Educational only, not financial advice. / 仅供学习交流，不构成投资建议。
+    </div>
+  </div>
+
+  <div id="chartWrap">
+    <div id="chartBox">
+      <div id="chartTop">
+        <div id="price">--</div>
+        <div id="hint">Connecting to Binance · 连接Binance中</div>
+      </div>
+      <div id="chart"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Symbol & Timeframe · 品种与周期</h3>
+    <label class="small"><b>Symbol · 品种</b>（Binance格式，如 BTCUSDT）</label>
+    <input id="symbol" type="text" placeholder="e.g. BTCUSDT, ETHUSDT..." value="BTCUSDT" />
+
+    <label class="small"><b>Timeframe · 周期</b></label>
+    <select id="tf">
+      <option value="5m">5m · 5分钟</option>
+      <option value="15m">15m · 15分钟</option>
+      <option value="30m">30m · 30分钟</option>
+      <option value="1h">1h · 1小时</option>
+      <option value="4h">4h · 4小时</option>
+      <option value="1d" selected>1d · 日线</option>
+      <option value="1w">1w · 周线</option>
+      <option value="1M">1M · 月线</option>
+    </select>
+
+    <button class="load-btn" onclick="reload()">Load · 加载</button>
+
+    <div class="hr"></div>
+
+    <h3>Subscription · 订阅</h3>
+    <label class="small"><b>Plan · 套餐</b></label>
+    <select id="plan">
+      <option value="halfmonthly">Half-monthly · 半月 - $9.9</option>
+      <option value="monthly">Monthly · 月付 - $19.99</option>
+      <option value="annual">Annual · 年付 - $99</option>
+      <option value="lifetime">Lifetime · 终身 - $299</option>
+    </select>
+
+    <button class="primary" onclick="startSubscription()">Subscribe · 订阅</button>
+
+    <div class="smallTxt">Select plan and click to pay via Stripe · 选择套餐后点击跳转支付</div>
+
+    <div class="hr"></div>
+
+    <h3>Email Alerts · 邮件提醒 <span class="badge">Pro</span></h3>
+    <input id="alertEmail" placeholder="you@email.com" />
+    <button class="primary" onclick="showToast('Alert Saved · 已保存')">Save Alert · 保存提醒</button>
+    <div class="smallTxt" id="alertHint">Pro Feature · 专业版功能</div>
+
+    <div class="hr"></div>
+
+    <h3>Share & Export · 分享与导出</h3>
+    <button class="ghost" onclick="copyShareLink()">Copy Share Link · 复制分享链接</button>
+    <button class="ghost" onclick="exportChartPNG()">Export PNG · 导出图片</button>
+
+    <div class="footer">Powered by DarriusAI · Inflection Hunter<br/>© 2025 Darrius FinTech Inc</div>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <script>
 let toastTimer = null;
@@ -114,7 +258,7 @@ async function loadHistoricalData(symbol, tf) {
     processData(bars);
     setHint("Binance data loaded · Binance数据加载完成");
   } catch (e) {
-    showToast("Binance API error · Binance接口错误，重试中...");
+    showToast("Binance API error, retrying... · Binance接口错误，重试中...");
     setTimeout(() => loadHistoricalData(symbol, tf), 3000);
   }
 }
@@ -151,7 +295,6 @@ function processData(bars) {
   const period = 14;
   const p = Math.floor(Math.sqrt(period));
 
-  // WMA 函数
   function wma(arr, per) {
     const res = new Array(arr.length).fill(NaN);
     const weights = Array.from({length: per}, (_, i) => i + 1);
@@ -168,9 +311,7 @@ function processData(bars) {
   const wma_full = wma(closes, period);
   const vect = new Array(closes.length).fill(NaN);
   for (let i = 0; i < closes.length; i++) {
-    if (!isNaN(wma_half[i]) && !isNaN(wma_full[i])) {
-      vect[i] = 2 * wma_half[i] - wma_full[i];
-    }
+    if (!isNaN(wma_half[i]) && !isNaN(wma_full[i])) vect[i] = 2 * wma_half[i] - wma_full[i];
   }
 
   const ext = new Array(closes.length).fill(NaN);
@@ -213,7 +354,7 @@ function processData(bars) {
   upLine.setData(up_line);
   dnLine.setData(dn_line);
 
-  // 最新信号（只取最新拐点）
+  // 最新信号
   let latestSignal = null;
   for (let x = closes.length - 2; x >= 1; x--) {
     if (trend[x] > 0 && trend[x - 1] <= 0) {
@@ -237,7 +378,6 @@ function processData(bars) {
     }
   }
 
-  // 更新最新信号显示
   const box = document.getElementById("signals");
   box.innerHTML = "";
   if (latestSignal) {
@@ -252,7 +392,6 @@ function processData(bars) {
     box.innerHTML = "<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
   }
 
-  // 更新市场情绪、风控
   const pulse = calcMarketPulse(latestSignal);
   document.getElementById("pulseCircle").innerText = pulse.value;
   document.getElementById("pulseCircle").style.borderColor = pulse.color;
