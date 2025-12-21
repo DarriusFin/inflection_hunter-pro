@@ -1,153 +1,178 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>Inflection Hunter Pro v6.2.2 │ Darrius FinTech Inc</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>拐点猎手 · Inflection Hunter Pro │ Darrius FinTech Inc</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<!-- Charts -->
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+
 <style>
-  :root{
-    --bg:#0a0e17;--card:#161b22;--border:#30363d;
-    --green:#00ff88;--red:#ff4757;--text:#e6edf3;--text2:#8b949e;
-    --cyan:#00d4ff;--amber:#ffaa00;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    background:radial-gradient(circle at top left,#1a1f2e,#0a0e17);
-    color:var(--text);height:100vh;overflow:hidden;
-  }
+:root{
+  --bg:#0b0f17;
+  --panel:#141a24;
+  --border:#2a3244;
+  --text:#e6edf3;
+  --muted:#9aa4b2;
+  --green:#00ff88;
+  --red:#ff4757;
+  --blue:#00d4ff;
+  --yellow:#ffaa00;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:radial-gradient(circle at top left,#182035,#0b0f17);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+}
 
-  #topbar{
-    height:64px;background:rgba(22,27,34,0.98);backdrop-filter:blur(20px);
-    border-bottom:1px solid var(--border);
-    display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:100;
-  }
-  #brand{display:flex;align-items:center;gap:14px;min-width:240px;}
-  #brandLogo{font-size:28px;font-weight:900;background:linear-gradient(90deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  #brandName{font-size:18px;font-weight:900;}
-  #company{font-size:12px;color:var(--text2);}
-  #status{background:rgba(0,255,136,0.15);color:var(--green);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;white-space:nowrap;}
+/* ---------- TOP BAR ---------- */
+#topbar{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+  background:rgba(20,26,36,.95);
+  border-bottom:1px solid var(--border);
+}
+#brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+#logo{
+  font-size:26px;
+  font-weight:900;
+  background:linear-gradient(90deg,var(--green),var(--blue));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+#subtitle{
+  font-size:13px;
+  color:var(--muted);
+}
+#status{
+  padding:6px 14px;
+  border-radius:16px;
+  font-size:13px;
+  background:#1e2533;
+}
+#upgrade{
+  margin-left:12px;
+  padding:8px 18px;
+  border-radius:20px;
+  background:linear-gradient(90deg,var(--green),var(--blue));
+  color:#000;
+  font-weight:800;
+  cursor:pointer;
+}
 
-  .top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
-  .btn{
-    padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
-    background:rgba(255,255,255,.06);color:#fff;cursor:pointer;font-weight:800;font-size:12px;
-    transition:transform .15s, background .15s, border-color .15s;
-    white-space:nowrap;
-  }
-  .btn:hover{transform:translateY(-1px);border-color:rgba(0,255,136,.45);}
-  .btn.primary{border:none;color:#000;background:linear-gradient(135deg,var(--green),var(--cyan));}
-  .btn.ghost{background:transparent;border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.85);}
-  .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none;}
+/* ---------- MAIN LAYOUT ---------- */
+#main{
+  display:grid;
+  grid-template-columns:320px 1fr 360px;
+  height:calc(100vh - 64px);
+}
 
-  #copyright{font-size:12px;color:#fff;opacity:0.9;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:20px;white-space:nowrap;}
+/* ---------- PANELS ---------- */
+.panel{
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  padding:16px;
+  overflow:auto;
+}
+.panel h3{
+  margin:0 0 12px;
+  font-size:15px;
+  color:var(--green);
+}
 
-  #main{display:flex;height:calc(100vh - 64px);}
-  #chartArea{flex:1;position:relative;background:#0d1117;}
-  #chartContainer{width:100%;height:100%;}
-  #watermark{
-    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);
-    font-size:8rem;font-weight:900;opacity:0.08;color:var(--red);pointer-events:none;z-index:5;
-  }
+/* ---------- LEFT ---------- */
+#pulse{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:160px;
+}
+#pulseCircle{
+  width:120px;height:120px;
+  border-radius:50%;
+  border:10px solid var(--green);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  font-weight:800;
+}
+#pulseLabel{
+  text-align:center;
+  margin-top:6px;
+  font-size:13px;
+  color:var(--muted);
+}
 
-  /* ✅ Sidebar scroll fix */
-  #sidebar{
-    width:420px;background:var(--card);border-left:1px solid var(--border);
-    display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;
-  }
-  .panel{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:16px 18px;}
-  #sidebar .panel:last-child{padding-bottom:28px;}
-  .panel h3{color:var(--green);font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-  .panel h3::before{content:"◆";font-size:11px;}
+.risk-box{
+  margin-top:16px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+}
+.risk-box div{margin:4px 0;font-size:13px}
 
-  #signals{max-height:250px;overflow-y:auto;padding-right:4px;}
-  .signal{padding:12px 14px;margin:10px 0;border-radius:14px;font-size:13px;animation:slideIn .3s;border-left:4px solid;}
-  .buy{background:rgba(0,255,136,0.10);border-color:var(--green);}
-  .sell{background:rgba(255,71,87,0.10);border-color:var(--red);}
-  @keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+/* ---------- CENTER ---------- */
+#chartWrap{
+  position:relative;
+  height:100%;
+}
+#price{
+  position:absolute;
+  top:12px;left:12px;
+  background:rgba(0,0,0,.6);
+  padding:6px 12px;
+  border-radius:12px;
+  font-weight:700;
+  z-index:10;
+}
 
-  .tf-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
-  .tf-btn{
-    padding:8px 10px;background:rgba(255,255,255,0.08);
-    border:1px solid var(--border);border-radius:10px;font-size:12px;cursor:pointer;transition:all .2s;
-  }
-  .tf-btn.active{background:var(--green);color:#000;border-color:var(--green);font-weight:900;}
+/* ---------- RIGHT ---------- */
+select,input,button{
+  width:100%;
+  margin:6px 0;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:#0f1522;
+  color:var(--text);
+}
+.signal{
+  border-left:4px solid var(--green);
+  padding:10px;
+  margin:8px 0;
+  background:#0f1522;
+  border-radius:8px;
+  font-size:13px;
+}
+.signal.sell{border-color:var(--red)}
 
-  select,input[type=checkbox],input[type=text],input[type=email],input[type=date]{
-    width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);
-    border:1px solid var(--border);border-radius:12px;color:var(--text);margin:8px 0;
-  }
-  input::placeholder{color:rgba(230,237,243,.45)}
-  .symbol-input{display:flex;gap:10px;margin:10px 0;}
-  .symbol-input input{flex:1;margin:0;}
-  .symbol-input button{padding:10px 14px;background:var(--green);color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;}
-  .row{display:flex;gap:10px;align-items:center;}
-  .row > *{flex:1;}
-  .small{font-size:12px;color:var(--text2);line-height:1.6;}
+.badge{
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:8px;
+  background:#26304a;
+  display:inline-block;
+  margin-bottom:8px;
+}
 
-  #upgradeBtn{
-    position:fixed;bottom:28px;right:28px;
-    background:linear-gradient(135deg,var(--green),var(--cyan));
-    color:#000;padding:14px 22px;border-radius:50px;
-    font-size:15px;font-weight:900;cursor:pointer;
-    z-index:99999;box-shadow:0 10px 30px rgba(0,255,136,0.45);transition:transform .2s;
-  }
-  #upgradeBtn:hover{transform:scale(1.06);}
-
-  /* Paywall */
-  #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.97);backdrop-filter:blur(20px);
-    z-index:99999;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:56px 18px;}
-  #paywall-content{max-width:1220px;width:100%;text-align:center;}
-  #paywall h1{font-size:3.3rem;margin-bottom:14px;background:linear-gradient(90deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  #paywall .subtitle{font-size:1.05rem;color:var(--green);margin:14px 0;}
-  #paywall .desc{font-size:1.02rem;max-width:900px;margin:0 auto 34px;color:#cfcfcf;line-height:1.65;}
-  #paywall .cards{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;align-items:stretch;}
-  .card{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:22px;padding:22px 20px;width:270px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .25s,border-color .25s;box-shadow:0 15px 45px rgba(0,0,0,0.55);}
-  .card:hover{transform:translateY(-8px);border-color:rgba(0,255,136,.6);}
-  .card.popular{border:2px solid var(--green);position:relative;}
-  .card.popular::after{content:"BEST VALUE";position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:8px 20px;border-radius:30px;font-weight:900;font-size:12px;}
-
-  .price{
-    font-size:2.7rem;font-weight:900;color:#fff !important;opacity:1 !important;
-    -webkit-text-fill-color:#fff !important;text-shadow:0 6px 22px rgba(0,0,0,.35);margin:14px 0;
-  }
-
-  .btn-pay{width:100%;padding:14px;margin-top:14px;border:none;border-radius:16px;font-size:1rem;font-weight:900;cursor:pointer;background:linear-gradient(90deg,var(--green),var(--cyan));color:#000;transition:transform .2s, box-shadow .2s;}
-  .btn-pay:hover{transform:scale(1.03);box-shadow:0 14px 34px rgba(0,255,136,0.35);}
-  #closePay{position:absolute;top:18px;right:22px;font-size:42px;cursor:pointer;color:#fff;opacity:0.8;transition:.2s;}
-  #closePay:hover{opacity:1;transform:scale(1.06);}
-
-  /* Modals */
-  #authModal,#affModal,#partnerModal{
-    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-    background:rgba(0,0,0,.72);backdrop-filter:blur(10px);z-index:999999;
-  }
-  .modal-card{width:min(820px,94vw);max-height:86vh;overflow:auto;background:rgba(22,27,34,.98);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:18px;}
-  .modal-title{font-weight:900;font-size:16px;margin-bottom:10px;}
-  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;position:sticky;bottom:0;padding-top:10px;background:linear-gradient(180deg, rgba(22,27,34,0), rgba(22,27,34,.98) 30%);}
-
-  table{width:100%;border-collapse:separate;border-spacing:0 8px;}
-  td,th{font-size:12px;text-align:left;padding:10px 12px;}
-  th{color:rgba(230,237,243,.8);}
-  .tr{
-    background:rgba(0,0,0,.22);
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:14px;
-  }
-  .tr td:first-child{border-top-left-radius:14px;border-bottom-left-radius:14px;}
-  .tr td:last-child{border-top-right-radius:14px;border-bottom-right-radius:14px;}
-  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:12px;}
-  .pill.green{background:rgba(0,255,136,.12);border-color:rgba(0,255,136,.25);color:rgba(0,255,136,.95)}
-  .pill.red{background:rgba(255,71,87,.12);border-color:rgba(255,71,87,.25);color:rgba(255,71,87,.95)}
-  .pill.badge{background:rgba(0,212,255,.10);border-color:rgba(0,212,255,.25);color:rgba(0,212,255,.95);}
-
-  @media (max-width: 920px){
-    #main{flex-direction:column;}
-    #sidebar{width:100%;height:48vh;}
-    #chartArea{height:52vh;}
-    #upgradeBtn{right:16px;bottom:16px;}
-  }
+/* ---------- FOOT ---------- */
+.footer{
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+  margin-top:12px;
+}
 </style>
 </head>
 
@@ -155,1277 +180,127 @@
 
 <div id="topbar">
   <div id="brand">
-    <div id="brandLogo">Inflection Hunter</div>
+    <div id="logo">拐点猎手</div>
     <div>
-      <div id="brandName">Inflection Hunter Pro <span style="opacity:.65;font-weight:900;">v6.2.2</span></div>
-      <div id="company">Darrius FinTech Inc</div>
+      <div style="font-weight:700">Inflection Hunter Pro</div>
+      <div id="subtitle">Darrius FinTech Inc</div>
     </div>
   </div>
-
-  <div class="top-actions">
-    <div id="status">Free Version · 60s Signal Delay</div>
-
-    <!-- ✅ Referral badge -->
-    <div class="pill badge" id="refBadge" style="display:none;">Referred: -</div>
-
-    <button class="btn ghost" id="btnPartner">Partner Center</button>
-
-    <button class="btn ghost" id="btnSignIn">Sign In</button>
-    <button class="btn ghost" id="btnLogout" style="display:none;">Logout</button>
-
-    <button class="btn" id="btnPortal" style="display:none;">Manage / Cancel Subscription</button>
-    <button class="btn" id="btnAffiliate" style="display:none;">Affiliate Dashboard</button>
-
-    <div id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</div>
+  <div>
+    <span id="status">Checking…</span>
+    <span id="upgrade" onclick="startCheckout()">Start Trial</span>
   </div>
 </div>
 
 <div id="main">
-  <div id="chartArea">
-    <div id="chartContainer"></div>
-    <div id="watermark">FREE VERSION</div>
-  </div>
 
-  <div id="sidebar">
+  <!-- LEFT -->
+  <div class="panel">
+    <h3>Market Pulse</h3>
+    <div id="pulse">
+      <div id="pulseCircle">--</div>
+    </div>
+    <div id="pulseLabel">Loading…</div>
 
-    <div class="panel">
-      <h3>Symbol & Timeframe</h3>
-
-      <div class="symbol-input">
-        <input type="text" id="customSymbol" placeholder="Enter symbol, e.g., AAPL, EURUSD, XAUUSD, BTC-USD..." value="BTC-USD">
-        <button id="btnLoadSymbol">Load</button>
-      </div>
-
-      <select id="symbolSelect">
-        <optgroup label="Crypto">
-          <option value="BTC-USD">BTC/USD</option>
-          <option value="ETH-USD">ETH/USD</option>
-          <option value="SOL-USD">SOL/USD</option>
-        </optgroup>
-        <optgroup label="US Stocks">
-          <option value="AAPL">AAPL Apple</option>
-          <option value="TSLA">TSLA Tesla</option>
-          <option value="NVDA">NVDA Nvidia</option>
-          <option value="MSFT">MSFT Microsoft</option>
-          <option value="SPY">SPY (S&P 500 ETF)</option>
-          <option value="QQQ">QQQ (Nasdaq 100 ETF)</option>
-        </optgroup>
-        <optgroup label="FX & Metals (Polygon)">
-          <option value="EURUSD">EURUSD</option>
-          <option value="GBPUSD">GBPUSD</option>
-          <option value="USDJPY">USDJPY</option>
-          <option value="XAUUSD">XAUUSD Gold</option>
-          <option value="XAGUSD">XAGUSD Silver</option>
-        </optgroup>
-        <optgroup label="HK Stocks (future)">
-          <option value="0700.HK">0700.HK Tencent</option>
-          <option value="9988.HK">9988.HK Alibaba</option>
-        </optgroup>
-      </select>
-
-      <div class="tf-buttons">
-        <button class="tf-btn" data-tf="5">5min</button>
-        <button class="tf-btn active" data-tf="15">15min</button>
-        <button class="tf-btn" data-tf="60">1hour</button>
-        <button class="tf-btn" data-tf="240">4hour</button>
-        <button class="tf-btn" data-tf="1D">1day</button>
-        <button class="tf-btn" data-tf="1W">1week</button>
-        <button class="tf-btn" data-tf="1M">1month</button>
-      </div>
-
-      <div class="small">
-        EN: Indices usually use ETFs (SPY/QQQ) unless provider offers index feeds.<br>
-        中文：指数通常用 ETF（SPY/QQQ）替代，除非数据源提供指数K线。
-      </div>
+    <h3 style="margin-top:20px">Risk Copilot</h3>
+    <div class="risk-box" id="riskBox">
+      <div>Entry: --</div>
+      <div>Stop: --</div>
+      <div>Targets: --</div>
     </div>
 
-    <div class="panel" id="pulsePanel">
-      <h3>Market Pulse</h3>
-
-      <div style="display:flex;gap:14px;align-items:center;">
-        <canvas id="sentimentRing" width="120" height="120" style="flex:0 0 auto;"></canvas>
-
-        <div style="flex:1;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-weight:900;font-size:13px;">Last Price / 最新价</div>
-            <div class="pill" id="pulseProvider">Provider: -</div>
-          </div>
-
-          <div style="margin-top:8px;font-size:26px;font-weight:900;" id="lastPrice">--</div>
-
-          <div style="margin-top:6px;color:var(--text2);font-size:12px;line-height:1.6;">
-            <div id="priceChange">Change: --</div>
-            <div id="sentimentText">Sentiment: --</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="small" style="margin-top:10px;">
-        EN: Sentiment is a price-action + DarriusAI trend composite (not social sentiment).<br>
-        中文：情绪值为价格行为 + DarriusAI 趋势的综合指标（非社交媒体情绪）。
-      </div>
-    </div>
-
-    <div class="panel">
-      <h3>Live Signals</h3>
-      <div id="signals">Loading...</div>
-    </div>
-
-    <div class="panel">
-      <h3>Risk Copilot</h3>
-
-      <div class="row">
-        <button class="btn" id="btnComputeRisk">Compute Risk</button>
-        <button class="btn" id="btnClearRisk">Clear</button>
-      </div>
-
-      <div class="row" style="margin-top:8px;">
-        <button class="btn" id="btnExportPng">Export PNG</button>
-        <button class="btn" id="btnShareLink">Share Link</button>
-      </div>
-
-      <label style="display:flex;gap:10px;align-items:center;margin-top:10px;">
-        <input type="checkbox" id="pinRiskLines" style="width:auto;margin:0;">
-        <span style="font-size:13px;">
-          <b>Pin Risk Lines</b> <span style="color:var(--text2);">(Pro only · localStorage)</span>
-        </span>
-      </label>
-
-      <div id="riskBox" style="margin-top:10px;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);">
-        <div style="font-weight:900;margin-bottom:8px;">Risk Summary</div>
-        <div class="small" id="riskSummary">
-          EN: Click “Compute Risk” to generate Entry/Stop/TP and draw risk lines on chart.<br>
-          中文：点击“Compute Risk”生成入场/止损/止盈并绘制风险线。
-        </div>
-      </div>
-
-      <div class="small" style="margin-top:10px;">
-        EN: Risk is computed by backend for consistency (harder to tamper).<br>
-        中文：风险由后端计算以确保一致性（更难被篡改）。
-      </div>
-    </div>
-
-    <div class="panel">
-      <h3>Email Alerts <span style="color:var(--text2);font-weight:800;">(Pro only)</span></h3>
-
-      <input type="email" id="alertEmail" placeholder="Your email for alerts (e.g., you@gmail.com)">
-
-      <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
-        <label style="display:flex;gap:8px;align-items:center;font-size:13px;flex:1;">
-          <input type="checkbox" id="alertSideB" style="width:auto;margin:0;" checked>
-          <span>BUY / 买入</span>
-        </label>
-        <label style="display:flex;gap:8px;align-items:center;font-size:13px;flex:1;">
-          <input type="checkbox" id="alertSideS" style="width:auto;margin:0;" checked>
-          <span>SELL / 卖出</span>
-        </label>
-      </div>
-
-      <div class="row" style="margin-top:6px;">
-        <button class="btn" id="btnSaveAlert">Save Alert</button>
-        <button class="btn" id="btnRefreshAlerts">Refresh</button>
-      </div>
-
-      <div class="small" style="margin-top:8px;" id="alertsHint">
-        EN: Pro users receive alerts only for NEW signals (deduped).<br>
-        中文：Pro 用户只会收到“新信号”提醒（已去重）。
-      </div>
-
-      <div id="alertsList" style="margin-top:10px;max-height:120px;overflow:auto;"></div>
-    </div>
-
-    <div class="panel">
-      <h3>Settings</h3>
-      <label style="display:flex;gap:10px;align-items:center;">
-        <input type="checkbox" id="showDarriusAI" checked style="width:auto;margin:0;">
-        <span>Show DarriusAI Trend Line</span>
-      </label>
-      <label style="display:flex;gap:10px;align-items:center;margin-top:10px;">
-        <input type="checkbox" id="sound" checked style="width:auto;margin:0;">
-        <span>Sound Alert (Pro only)</span>
-      </label>
-      <div class="small" style="margin-top:8px;">
-        EN: Free delay enforced by backend. Front-end cannot bypass.<br>
-        中文：免费延迟由后端强制执行，前端无法绕过。
-      </div>
-    </div>
-
-    <div class="panel" style="text-align:center;padding-top:18px;">
-      <p style="color:var(--text2);font-size:13px;line-height:1.9;">
-        World's Leading Multi-Asset Inflection Detection<br>
-        Exclusively developed by Darrius FinTech Inc
-      </p>
+    <div class="footer">
+      拐点猎手 · 非投资建议
     </div>
   </div>
-</div>
 
-<div id="upgradeBtn">Upgrade to Pro → Real-time Signals</div>
-
-<!-- Paywall -->
-<div id="paywall">
-  <div id="closePay">×</div>
-  <div id="paywall-content">
-    <h1>Inflection Hunter Pro</h1>
-    <p class="subtitle">Official Version by Darrius FinTech Inc</p>
-    <p class="desc">
-      Real-time precision signals · Remove delay & watermark · Voice + popup alerts · Risk Copilot · Share snapshots<br>
-      <b>7-day free trial</b> for subscription plans (auto-bills unless canceled in Stripe portal).
-    </p>
-
-    <div class="cards">
-      <div class="card">
-        <h3>Half-Monthly</h3>
-        <div class="price" id="priceHalfMonthly">$9.90</div>
-        <p>7-day free trial<br>Auto-bills every 2 weeks</p>
-        <button class="btn-pay" id="btnPayHalfMonthly">Start Trial</button>
-      </div>
-
-      <div class="card">
-        <h3>Monthly</h3>
-        <div class="price" id="priceMonthly">$19.99</div>
-        <p>7-day free trial<br>Cancel anytime</p>
-        <button class="btn-pay" id="btnPayMonthly">Start Trial</button>
-      </div>
-
-      <div class="card popular">
-        <h3>Annual</h3>
-        <div class="price" id="priceAnnual">$99.00</div>
-        <p><strong>Only $8.25/month</strong><br><mark>Save big</mark></p>
-        <button class="btn-pay" id="btnPayAnnual">Best Deal</button>
-      </div>
-
-      <div class="card">
-        <h3>Lifetime</h3>
-        <div class="price" id="priceLifetime">$299.00</div>
-        <p>One-time payment<br>Own forever</p>
-        <button class="btn-pay" id="btnPayLifetime">Buy Lifetime</button>
-      </div>
-    </div>
-
-    <p style="margin-top:26px;color:#9a9a9a;font-size:14px;line-height:1.6;">
-      After payment, your Pro status unlocks via secure Stripe webhooks.<br>
-      Use “Manage / Cancel Subscription” for cancellation & invoices.
-    </p>
+  <!-- CENTER -->
+  <div id="chartWrap">
+    <div id="price">--</div>
+    <div id="chart" style="width:100%;height:100%"></div>
   </div>
-</div>
 
-<!-- Auth Modal -->
-<div id="authModal">
-  <div class="modal-card" style="width:min(520px,92vw);">
-    <div class="modal-title">Sign In (Magic Link)</div>
-    <div class="small" style="margin-bottom:8px;">
-      EN: Enter your email and we will send you a sign-in link.<br>
-      中文：输入邮箱，我们会发送登录链接。
-    </div>
-    <input type="email" id="authEmail" placeholder="you@example.com">
-    <div class="modal-actions">
-      <button class="btn" id="btnAuthCancel">Cancel</button>
-      <button class="btn primary" id="btnAuthSend">Send Link</button>
-    </div>
+  <!-- RIGHT -->
+  <div class="panel">
+    <h3>Symbol & Timeframe</h3>
+    <select id="symbol">
+      <option value="AAPL">AAPL</option>
+      <option value="BTC-USD">BTC-USD</option>
+      <option value="XAUUSD">XAUUSD</option>
+    </select>
+    <select id="tf">
+      <option value="15">15m</option>
+      <option value="60">1h</option>
+      <option value="1D">1D</option>
+    </select>
+    <button onclick="reload()">Load</button>
+
+    <h3 style="margin-top:16px">Live Signals</h3>
+    <div id="signals">Loading…</div>
+
+    <h3 style="margin-top:16px">Email Alerts <span class="badge">Pro</span></h3>
+    <input id="alertEmail" placeholder="you@email.com"/>
+    <button onclick="saveAlert()">Save Alert</button>
+
+    <h3 style="margin-top:16px">Share</h3>
+    <button onclick="share()">Copy Share Link</button>
   </div>
-</div>
 
-<!-- Affiliate Dashboard Modal (Admin only) -->
-<div id="affModal">
-  <div class="modal-card">
-    <div class="modal-title">Affiliate Dashboard (Admin)</div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
-      <div>
-        <div class="small">From (date)</div>
-        <input type="date" id="affFrom">
-      </div>
-      <div>
-        <div class="small">To (date)</div>
-        <input type="date" id="affTo">
-      </div>
-    </div>
-
-    <div class="row">
-      <button class="btn" id="btnAffLoad">Load</button>
-      <button class="btn" id="btnAffCsv">Export CSV</button>
-    </div>
-
-    <div style="margin-top:12px;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);">
-      <div style="font-weight:900;margin-bottom:6px;">Generate Partner Link</div>
-      <div class="small">EN: Give partners a unique ref code. 中文：给推广者一个唯一 ref 码。</div>
-      <div class="row" style="margin-top:8px;">
-        <input type="text" id="affRef" placeholder="e.g., AFF_A001" style="margin:0;">
-        <button class="btn primary" id="btnAffCopy">Copy Link</button>
-      </div>
-      <div class="small" id="affLinkText" style="margin-top:8px;"></div>
-    </div>
-
-    <div style="margin-top:14px;">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <span class="pill">Total Payments: <b id="affTotalPay">0</b></span>
-        <span class="pill green">Total USD: <b id="affTotalUsd">0.00</b></span>
-        <span class="pill red">Commission 20%: <b id="affTotalComm">0.00</b></span>
-      </div>
-
-      <div style="margin-top:10px;">
-        <table>
-          <thead>
-            <tr>
-              <th>Ref</th>
-              <th>Payments</th>
-              <th>Total (USD)</th>
-              <th>Commission 20%</th>
-            </tr>
-          </thead>
-          <tbody id="affTable"></tbody>
-        </table>
-        <div class="small" id="affEmptyHint" style="display:none;">
-          EN: No affiliate payments in this window.<br>
-          中文：该时间范围内暂无推广入账记录。
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn" id="btnAffClose">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ✅ Partner Center (for partners, non-admin) -->
-<div id="partnerModal">
-  <div class="modal-card">
-    <div class="modal-title">Partner Center</div>
-    <div class="small" style="margin-bottom:10px;">
-      EN: Partners can track performance of their own ref code.<br>
-      中文：推广者可查看自己 ref 码的效果与返佣统计。
-    </div>
-
-    <div style="padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);">
-      <div style="font-weight:900;margin-bottom:6px;">Your Ref Code</div>
-      <input type="text" id="partnerRef" placeholder="e.g., AFF_A001">
-      <div class="row">
-        <button class="btn primary" id="btnPartnerCopy">Copy Partner Link</button>
-        <button class="btn" id="btnPartnerLoad">Load Stats</button>
-      </div>
-      <div class="small" id="partnerLinkText" style="margin-top:8px;"></div>
-    </div>
-
-    <div style="margin-top:12px;">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <span class="pill">Payments: <b id="partnerPay">0</b></span>
-        <span class="pill green">Total USD: <b id="partnerUsd">0.00</b></span>
-        <span class="pill red">Commission 20%: <b id="partnerComm">0.00</b></span>
-      </div>
-      <div class="small" style="margin-top:10px;color:rgba(230,237,243,.7);">
-        EN: Stats are based on successfully paid invoices/charges attributed to your ref.<br>
-        中文：统计以“实际到账”的订阅/支付为准。
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn" id="btnPartnerClose">Close</button>
-    </div>
-  </div>
 </div>
 
 <script>
-/** ===== Config ===== */
-const API_BASE = ""; // same domain => ""; cross domain => "http://localhost:3000"
-const LOCAL_PIN_KEY = (sym, tf) => `ih_pin_risk:${sym}:${tf}`;
-
-/** Referral persistence */
-const REF_KEY = "ih_ref_code";
-const REF_TS_KEY = "ih_ref_ts";
-const REF_TTL_DAYS = 30;
-
-/** Replace with real Stripe price IDs in production */
-const STRIPE_PRICE_HALFMONTHLY = "price_9.9";
-const STRIPE_PRICE_MONTHLY = "price_19.99";
-const STRIPE_PRICE_ANNUAL = "price_99";
-const STRIPE_PRICE_LIFETIME = "price_299";
-
-/** ===== Referral helpers ===== */
-function setRefCode(ref){
-  if(!ref) return;
-  localStorage.setItem(REF_KEY, ref);
-  localStorage.setItem(REF_TS_KEY, String(Date.now()));
-}
-function getRefCode(){
-  const ref = localStorage.getItem(REF_KEY) || "";
-  const ts = Number(localStorage.getItem(REF_TS_KEY) || 0);
-  if(!ref || !ts) return "";
-  const ageDays = (Date.now() - ts) / (1000*60*60*24);
-  if(ageDays > REF_TTL_DAYS){
-    localStorage.removeItem(REF_KEY);
-    localStorage.removeItem(REF_TS_KEY);
-    return "";
-  }
-  return ref;
-}
-function updateRefBadge(){
-  const r = getRefCode();
-  const el = document.getElementById("refBadge");
-  if(!el) return;
-  if(r){
-    el.style.display="inline-block";
-    el.textContent=`Referred: ${r}`;
-  }else{
-    el.style.display="none";
-  }
-}
-
-/** ===== Toast + Overlay ===== */
-function toastBilingual(en, zh, type="info"){
-  const id="ih-toast";
-  let box=document.getElementById(id);
-  if(!box){
-    box=document.createElement("div");
-    box.id=id; box.style.position="fixed"; box.style.top="84px"; box.style.right="18px";
-    box.style.zIndex="999999"; box.style.maxWidth="420px"; document.body.appendChild(box);
-  }
-  const item=document.createElement("div");
-  item.style.marginBottom="10px"; item.style.padding="12px 14px"; item.style.borderRadius="14px";
-  item.style.border="1px solid rgba(255,255,255,.15)";
-  item.style.background="rgba(0,0,0,.65)"; item.style.backdropFilter="blur(10px)";
-  item.style.boxShadow="0 10px 30px rgba(0,0,0,.5)";
-  item.style.fontSize="13px"; item.style.lineHeight="1.55";
-  if(type==="error") item.style.borderColor="rgba(255,71,87,.65)";
-  if(type==="success") item.style.borderColor="rgba(0,255,136,.65)";
-  item.innerHTML=`<div style="font-weight:900;margin-bottom:6px;">${type==="error"?"Error":"Notice"}</div>
-    <div><b>EN:</b> ${en}</div><div style="margin-top:4px;"><b>中文:</b> ${zh}</div>`;
-  box.appendChild(item);
-  setTimeout(()=>item.remove(),5200);
-}
-function setChartOverlay(msgEN,msgZH){
-  const id="ih-overlay";
-  let ov=document.getElementById(id);
-  if(!ov){
-    ov=document.createElement("div");
-    ov.id=id;
-    ov.style.position="absolute";ov.style.left="50%";ov.style.top="50%";
-    ov.style.transform="translate(-50%,-50%)";
-    ov.style.zIndex="8";ov.style.padding="18px 20px";ov.style.borderRadius="18px";
-    ov.style.border="1px solid rgba(255,255,255,.16)";
-    ov.style.background="rgba(0,0,0,.55)";ov.style.backdropFilter="blur(14px)";
-    ov.style.maxWidth="560px";ov.style.textAlign="center";ov.style.color="rgba(255,255,255,.92)";
-    ov.style.lineHeight="1.7";ov.style.fontSize="14px";
-    document.getElementById("chartArea").appendChild(ov);
-  }
-  ov.innerHTML=`<div style="font-weight:900;margin-bottom:10px;">Data Not Available</div>
-    <div><b>EN:</b> ${msgEN}</div><div style="margin-top:6px;"><b>中文:</b> ${msgZH}</div>`;
-  ov.style.display="block";
-}
-function clearChartOverlay(){ const ov=document.getElementById("ih-overlay"); if(ov) ov.style.display="none"; }
-
-/** ===== API ===== */
-async function apiGetMe(){ return (await fetch(`${API_BASE}/api/me`,{credentials:"include"})).json(); }
-async function apiCheckout(priceId, ref){
-  return (await fetch(`${API_BASE}/api/checkout`,{
-    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
-    body:JSON.stringify({priceId,ref})
-  })).json();
-}
-async function apiPortal(){
-  return (await fetch(`${API_BASE}/api/billing/portal`,{
-    method:"POST",headers:{"content-type":"application/json"},credentials:"include"
-  })).json();
-}
-async function apiBars(sym,tf){
-  return (await fetch(`${API_BASE}/api/bars?symbol=${encodeURIComponent(sym)}&tf=${encodeURIComponent(tf)}&limit=900`,{credentials:"include"})).json();
-}
-async function apiSignals(sym,tf){
-  return (await fetch(`${API_BASE}/api/signals?symbol=${encodeURIComponent(sym)}&tf=${encodeURIComponent(tf)}`,{credentials:"include"})).json();
-}
-async function apiRisk(payload){
-  return (await fetch(`${API_BASE}/api/risk`,{
-    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
-    body:JSON.stringify(payload)
-  })).json();
-}
-async function apiShare(snapshot){
-  return (await fetch(`${API_BASE}/api/share`,{
-    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
-    body:JSON.stringify(snapshot)
-  })).json();
-}
-async function apiSaveAlert(payload){
-  return (await fetch(`${API_BASE}/api/alerts/save`,{
-    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
-    body:JSON.stringify(payload)
-  })).json();
-}
-async function apiListAlerts(){
-  return (await fetch(`${API_BASE}/api/alerts/list`,{credentials:"include"})).json();
-}
-async function apiAuthStart(email){
-  return (await fetch(`${API_BASE}/api/auth/start`,{
-    method:"POST",headers:{"content-type":"application/json"},credentials:"include",
-    body:JSON.stringify({email})
-  })).json();
-}
-async function apiLogout(){
-  return (await fetch(`${API_BASE}/api/auth/logout`,{
-    method:"POST",headers:{"content-type":"application/json"},credentials:"include"
-  })).json();
-}
-async function apiAffiliates(fromTs,toTs){
-  return (await fetch(`${API_BASE}/api/admin/affiliates?fromTs=${encodeURIComponent(fromTs)}&toTs=${encodeURIComponent(toTs)}`,{credentials:"include"})).json();
-}
-
-/* Partner stats (partners/non-admin) */
-async function apiPartnerStats(ref){
-  // You implement backend: GET /api/partner/stats?ref=AFF_A001
-  return (await fetch(`${API_BASE}/api/partner/stats?ref=${encodeURIComponent(ref)}`,{credentials:"include"})).json();
-}
-
-/* (Optional) If you have backend /api/prices, enable dynamic paywall price hydration */
-async function apiPrices(priceIds){
-  return (await fetch(`${API_BASE}/api/prices`,{
-    method:"POST",
-    headers:{"content-type":"application/json"},
-    credentials:"include",
-    body:JSON.stringify({ priceIds })
-  })).json();
-}
-function formatMoney(amount, currency){
-  try{
-    return new Intl.NumberFormat(undefined, { style:"currency", currency: (currency||"USD").toUpperCase() }).format(amount);
-  }catch(e){
-    return `$${Number(amount).toFixed(2)}`;
-  }
-}
-async function hydratePaywallPrices(){
-  const priceIds = [STRIPE_PRICE_HALFMONTHLY,STRIPE_PRICE_MONTHLY,STRIPE_PRICE_ANNUAL,STRIPE_PRICE_LIFETIME];
-  try{
-    const res = await apiPrices(priceIds);
-    if(!res.ok || !res.items) return;
-    const map = new Map(res.items.map(x=>[x.id,x]));
-    const set = (elId, pid, fallback)=>{
-      const el = document.getElementById(elId);
-      const it = map.get(pid);
-      if(!el) return;
-      if(it?.unit_amount != null) el.textContent = formatMoney(it.unit_amount/100, it.currency);
-      else el.textContent = fallback;
-    };
-    set("priceHalfMonthly", STRIPE_PRICE_HALFMONTHLY, "$9.90");
-    set("priceMonthly", STRIPE_PRICE_MONTHLY, "$19.99");
-    set("priceAnnual", STRIPE_PRICE_ANNUAL, "$99.00");
-    set("priceLifetime", STRIPE_PRICE_LIFETIME, "$299.00");
-  }catch(e){}
-}
-
-/** ===== Helpers ===== */
-function fmt(n){
-  if(n===null||n===undefined||Number.isNaN(Number(n))) return "--";
-  const x=Number(n); if(!Number.isFinite(x)) return "--";
-  if(Math.abs(x)>=1000) return x.toFixed(2);
-  if(Math.abs(x)>=10) return x.toFixed(3);
-  return x.toFixed(5);
-}
-function timeStr(ts){ if(!ts) return "-"; return new Date(ts*1000).toLocaleString(); }
-function dateToTs(dstr, endOfDay=false){
-  if(!dstr) return 0;
-  const d=new Date(dstr+"T00:00:00");
-  if(endOfDay) d.setHours(23,59,59,999);
-  return Math.floor(d.getTime()/1000);
-}
-function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
-
-/** ===== Market Pulse (Last price + Sentiment ring) ===== */
-function drawSentimentRing(score){
-  const c=document.getElementById("sentimentRing");
-  if(!c) return;
-  const ctx=c.getContext("2d");
-  const w=c.width, h=c.height;
-  const cx=w/2, cy=h/2;
-  const r=46;
-  const line=14;
-
-  ctx.clearRect(0,0,w,h);
-
-  ctx.beginPath();
-  ctx.strokeStyle="rgba(255,255,255,0.10)";
-  ctx.lineWidth=line;
-  ctx.arc(cx,cy,r,0,Math.PI*2);
-  ctx.stroke();
-
-  const pct=clamp(score,0,100)/100;
-  const start=-Math.PI/2;
-  const end=start + pct*Math.PI*2;
-
-  const col = score>=60 ? "rgba(0,255,136,0.95)" : score<=40 ? "rgba(255,71,87,0.95)" : "rgba(255,170,0,0.95)";
-  ctx.beginPath();
-  ctx.strokeStyle=col;
-  ctx.lineWidth=line;
-  ctx.lineCap="round";
-  ctx.arc(cx,cy,r,start,end);
-  ctx.stroke();
-
-  ctx.fillStyle="rgba(255,255,255,0.92)";
-  ctx.font="900 24px Arial";
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-  ctx.fillText(String(Math.round(score)), cx, cy-6);
-
-  ctx.fillStyle="rgba(255,255,255,0.65)";
-  ctx.font="12px Arial";
-  ctx.fillText("Sentiment", cx, cy+18);
-}
-
-function computeSentimentScore(bars, sigRes){
-  if(!bars || bars.length < 60) return null;
-  const n = Math.min(60, bars.length-1);
-  const slice = bars.slice(-n);
-  const closes = slice.map(b=>Number(b.close));
-  const last = closes[closes.length-1];
-  const first = closes[0];
-  const ret = (last-first)/first;
-
-  let vol=0;
-  for(let i=1;i<closes.length;i++){
-    const r=(closes[i]-closes[i-1])/closes[i-1];
-    vol += r*r;
-  }
-  vol = Math.sqrt(vol/(closes.length-1));
-
-  let trend = 0;
-  const upLast = sigRes?.trendLines?.up?.length ? sigRes.trendLines.up[sigRes.trendLines.up.length-1] : null;
-  const dnLast = sigRes?.trendLines?.dn?.length ? sigRes.trendLines.dn[sigRes.trendLines.dn.length-1] : null;
-  if(upLast && !dnLast) trend = +1;
-  if(dnLast && !upLast) trend = -1;
-  if(upLast && dnLast) trend = (upLast.time >= dnLast.time) ? +1 : -1;
-
-  let sigBias=0;
-  const latest = sigRes?.signals?.[0];
-  if(latest){
-    const side = String(latest.side||"B").toUpperCase().startsWith("S")?"S":"B";
-    sigBias = (side==="B") ? +1 : -1;
-  }
-
-  const score = 50 + clamp(ret*800, -25, 25) + trend*12 + sigBias*8 - clamp(vol*600, 0, 18);
-  return clamp(score,0,100);
-}
-
-function updateMarketPulse(barsRes, sigRes){
-  const bars = (barsRes?.bars||[]).map(b=>({time:b.time, open:+b.open, high:+b.high, low:+b.low, close:+b.close}));
-  const lpEl=document.getElementById("lastPrice");
-  const chEl=document.getElementById("priceChange");
-  const stEl=document.getElementById("sentimentText");
-  const prEl=document.getElementById("pulseProvider");
-
-  if(!bars.length){
-    if(lpEl) lpEl.textContent="--";
-    if(chEl) chEl.textContent="Change: --";
-    if(stEl) stEl.textContent="Sentiment: --";
-    if(prEl) prEl.textContent="Provider: -";
-    drawSentimentRing(0);
-    return;
-  }
-
-  const last = bars[bars.length-1].close;
-  const backN = Math.max(1, Math.min(24, bars.length-1));
-  const prev = bars[bars.length-1-backN].close;
-  const chg = (last-prev)/prev;
-
-  if(prEl) prEl.textContent = `Provider: ${sigRes?.provider||barsRes?.provider||"-"}`;
-  if(lpEl) lpEl.textContent = fmt(last);
-  if(chEl) chEl.innerHTML = `Change (${backN} bars): <b style="color:${chg>=0?'rgba(0,255,136,0.95)':'rgba(255,71,87,0.95)'}">${(chg*100).toFixed(2)}%</b>`;
-
-  const score = computeSentimentScore(bars, sigRes);
-  if(score==null){
-    if(stEl) stEl.textContent="Sentiment: -- (need more bars)";
-    drawSentimentRing(0);
-    return;
-  }
-
-  const label = score>=65 ? "Bullish / 偏多" : score<=35 ? "Bearish / 偏空" : "Neutral / 中性";
-  if(stEl) stEl.innerHTML = `Sentiment: <b>${label}</b> (${Math.round(score)}/100)`;
-  drawSentimentRing(score);
-}
-
-/** ===== Chart ===== */
-let chart,candleSeries,upSeries,dnSeries;
-let tf="15",symbol="BTC-USD";
-let lastSignalsPayload=null;
-let riskLines={entry:null,stop:null,tp1:null,tp2:null};
-
-function initChart(){
-  chart=LightweightCharts.createChart(document.getElementById("chartContainer"),{
-    width:document.getElementById("chartArea").clientWidth,
-    height:document.getElementById("chartArea").clientHeight,
-    layout:{backgroundColor:"#000",textColor:"#d1d4dc"},
-    grid:{vertLines:{color:"rgba(0,0,0,0)"},horzLines:{color:"rgba(0,0,0,0)"}},
-    timeScale:{timeVisible:true,secondsVisible:false}
-  });
-  candleSeries=chart.addCandlestickSeries({
-    upColor:"#00ff88",downColor:"#ff4757",
-    wickUpColor:"#00ff88",wickDownColor:"#ff4757",
-    borderVisible:false
-  });
-  upSeries=chart.addLineSeries({color:"#ff1493",lineWidth:3});
-  dnSeries=chart.addLineSeries({color:"#7fff00",lineWidth:3});
-}
-initChart();
-window.onresize=()=>chart?.resize(document.getElementById("chartArea").clientWidth,document.getElementById("chartArea").clientHeight);
-
-/** ===== Entitlements ===== */
-function isPro(){ return !!(lastSignalsPayload?.pro); }
-function enforceProUI(){
-  const sound=document.getElementById("sound");
-  const pin=document.getElementById("pinRiskLines");
-  if(!isPro()){
-    sound.checked=false; sound.disabled=true;
-    pin.checked=false; pin.disabled=true;
-  }else{
-    sound.disabled=false;
-    pin.disabled=false;
-  }
-}
-
-/** ===== Signals cards ===== */
-function renderSignalsCards(sigRes){
-  const box=document.getElementById("signals");
-  const provider=sigRes.provider||"-";
-  const delaySec=Number(sigRes.delaySec||0);
-  const head=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div style="font-weight:900;">Live Signals</div>
-      <div style="color:#8b949e;font-size:12px;">Provider: <b style="color:#e6edf3">${provider}</b> · Delay: <b style="color:#e6edf3">${delaySec}s</b></div>
-    </div>`;
-  const hint=sigRes.coverage_hint?`
-    <div style="margin:10px 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:#c9d1d9;line-height:1.6;">
-      <div><b>EN:</b> ${sigRes.coverage_hint}</div>
-      <div style="margin-top:6px;"><b>中文:</b> ${sigRes.coverage_hint}</div>
-      ${(sigRes.next_steps||[]).length?`<div style="margin-top:8px;color:#8b949e;">${sigRes.next_steps.map(s=>`• ${s}`).join("<br>")}</div>`:""}
-    </div>`:"";
-  const signals=sigRes.signals||[];
-  if(!signals.length){
-    box.innerHTML=head+hint+`<div style="color:#8b949e;line-height:1.8;">
-      <div><b>EN:</b> No inflection signals found in current window.</div>
-      <div><b>中文:</b> 当前窗口未检测到拐点信号。</div></div>`;
-    return;
-  }
-  const html=signals.slice(0,10).map(s=>{
-    const side=String(s.side||"B").toUpperCase().startsWith("S")?"S":"B";
-    const cls=side==="B"?"buy":"sell";
-    const titleEN=side==="B"?"BUY Inflection":"SELL Inflection";
-    const titleZH=side==="B"?"买入拐点":"卖出拐点";
-    return `
-      <div class="signal ${cls}">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-weight:900;">${titleEN} · ${titleZH}</div>
-          <div style="color:#8b949e;font-size:12px;">${timeStr(s.time)}</div>
-        </div>
-        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);">
-            <div style="font-size:12px;color:#8b949e;">Signal Price / 信号价</div>
-            <div style="font-size:16px;font-weight:900;">${fmt(s.signal_price)}</div>
-          </div>
-          <div style="padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);">
-            <div style="font-size:12px;color:#8b949e;">Entry Ref / 入场参考</div>
-            <div style="font-size:16px;font-weight:900;">${fmt(s.entry_price)}</div>
-          </div>
-        </div>
-        <div style="margin-top:10px;color:#8b949e;font-size:12px;line-height:1.6;">
-          <div><b>EN:</b> Signal = inflection detected. Entry = execution-friendly reference (e.g., next bar open).</div>
-          <div><b>中文:</b> 信号价=拐点确认时刻价；入场参考=更贴近执行的参考价（如下一根K线开盘价）。</div>
-        </div>
-      </div>`;
-  }).join("");
-  box.innerHTML=head+hint+html;
-}
-
-/** ===== Risk lines ===== */
-function clearRiskLines(){
-  for(const k of Object.keys(riskLines)){
-    if(riskLines[k]){ try{ candleSeries.removePriceLine(riskLines[k]); }catch(e){} riskLines[k]=null; }
-  }
-}
-function drawRiskLines(risk){
-  clearRiskLines();
-  riskLines.entry=candleSeries.createPriceLine({price:risk.entry,title:"ENTRY",color:"rgba(0,212,255,.9)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true});
-  riskLines.stop=candleSeries.createPriceLine({price:risk.stop,title:"STOP",color:"rgba(255,71,87,.9)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true});
-  riskLines.tp1=candleSeries.createPriceLine({price:risk.tp1,title:"TP1",color:"rgba(0,255,136,.9)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true});
-  riskLines.tp2=candleSeries.createPriceLine({price:risk.tp2,title:"TP2",color:"rgba(0,255,136,.6)",lineWidth:2,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true});
-
-  const sideText=risk.side==="S"?"SELL / 卖出":"BUY / 买入";
-  document.getElementById("riskSummary").innerHTML=`
-    <div style="line-height:1.75;">
-      <div style="font-weight:900;margin-bottom:6px;">${sideText} · ${risk.symbol} · ${risk.tf}</div>
-      <div><b>Entry / 入场参考:</b> ${fmt(risk.entry)} &nbsp; | &nbsp; <b>Stop / 止损:</b> ${fmt(risk.stop)}</div>
-      <div><b>TP1 / 止盈1:</b> ${fmt(risk.tp1)} &nbsp; | &nbsp; <b>TP2 / 止盈2:</b> ${fmt(risk.tp2)}</div>
-      <div><b>RR:</b> ${risk.rr1} / ${risk.rr2} &nbsp; | &nbsp; <b>Signal Time:</b> ${timeStr(risk.signal_time)}</div>
-      <div style="margin-top:8px;color:rgba(230,237,243,.7);font-size:12px;">
-        EN: ${risk.notes||"Computed by backend"} &nbsp; 中文：${risk.notes||"由后端计算"}
-      </div>
-    </div>`;
-}
-function savePinnedRisk(risk){ localStorage.setItem(LOCAL_PIN_KEY(symbol,tf), JSON.stringify(risk)); }
-function clearPinnedRisk(){ localStorage.removeItem(LOCAL_PIN_KEY(symbol,tf)); }
-function loadPinnedRisk(){
-  const raw=localStorage.getItem(LOCAL_PIN_KEY(symbol,tf));
-  if(raw && isPro()){
-    try{ const risk=JSON.parse(raw);
-      if(risk?.entry&&risk?.stop&&risk?.tp1&&risk?.tp2){
-        document.getElementById("pinRiskLines").checked=true;
-        drawRiskLines(risk);
-      }
-    }catch(e){}
-  }else{
-    document.getElementById("pinRiskLines").checked=false;
-  }
-}
-
-/** ===== Export PNG ===== */
-function downloadCanvas(canvas, filename){
-  const a=document.createElement("a");
-  a.href=canvas.toDataURL("image/png");
-  a.download=filename;
-  a.click();
-}
-async function exportPng(){
-  const canvas=chart.takeScreenshot();
-  if(!canvas){ toastBilingual("Screenshot not supported.","截图功能不可用。","error"); return; }
-
-  const riskText=document.getElementById("riskSummary").innerText.trim();
-  const pad=180;
-  const out=document.createElement("canvas");
-  out.width=canvas.width; out.height=canvas.height+pad;
-  const ctx=out.getContext("2d");
-  ctx.drawImage(canvas,0,0);
-  ctx.fillStyle="rgba(0,0,0,0.88)";
-  ctx.fillRect(0,canvas.height,out.width,pad);
-  ctx.fillStyle="rgba(255,255,255,0.92)";
-  ctx.font="16px Arial";
-  ctx.fillText("Inflection Hunter Pro · Risk Copilot Snapshot",18,canvas.height+28);
-  ctx.fillStyle="rgba(255,255,255,0.85)";
-  ctx.font="13px Arial";
-  const lines=riskText.split("\n").slice(0,7);
-  let y=canvas.height+56;
-  for(const ln of lines){ ctx.fillText(ln.slice(0,120),18,y); y+=20; }
-  ctx.fillStyle="rgba(255,255,255,0.55)";
-  ctx.font="12px Arial";
-  ctx.fillText("EN: Not financial advice.  中文：仅供参考，不构成投资建议。",18,out.height-18);
-  downloadCanvas(out, `IH_${symbol}_${tf}_risk.png`);
-}
-
-/** ===== Share Link ===== */
-async function shareLink(){
-  if(!isPro()){
-    toastBilingual("Pro only. Upgrade to share snapshots.","仅Pro可分享快照，请升级。","error");
-    return;
-  }
-  const latest=lastSignalsPayload?.signals?.[0];
-  if(!latest){ toastBilingual("No signal to share.","暂无可分享的信号。","error"); return; }
-
-  let risk=null;
-  const raw=localStorage.getItem(LOCAL_PIN_KEY(symbol,tf));
-  if(raw){ try{ risk=JSON.parse(raw); }catch(e){} }
-  if(!risk?.entry){
-    const out = await apiRisk({
-      symbol, tf,
-      signal:{ side:latest.side, time:latest.time, signal_price:latest.signal_price, entry_price:latest.entry_price },
-      rr1:2, rr2:3, useATR:false
-    });
-    if(!out.ok){ toastBilingual("Risk compute failed.","风险计算失败。","error"); return; }
-    risk=out;
-  }
-  const payload={
-    symbol, timeframe:tf, side:risk.side,
-    signal_time:risk.signal_time,
-    entry:risk.entry, stop:risk.stop, tp1:risk.tp1, tp2:risk.tp2,
-    rr1:risk.rr1, rr2:risk.rr2,
-    provider:risk.provider
-  };
-  const res=await apiShare(payload);
-  if(res.share_url){
-    await navigator.clipboard.writeText(res.share_url);
-    toastBilingual("Share link copied.","分享链接已复制。","success");
-  }else{
-    toastBilingual("Share failed (check login/pro).","分享失败（请检查登录/Pro状态）。","error");
-  }
-}
-
-/** ===== Alerts UI ===== */
-function renderAlertsList(items){
-  const box=document.getElementById("alertsList");
-  if(!items?.length){
-    box.innerHTML=`<div class="small">EN: No alerts saved. 中文：暂无已保存提醒。</div>`;
-    return;
-  }
-  box.innerHTML=items.slice(0,12).map(a=>{
-    const sides=a.sides||"B,S";
-    return `
-      <div style="padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);margin-bottom:8px;">
-        <div style="font-weight:900;">${a.symbol} · ${a.tf} · <span style="color:rgba(230,237,243,.85)">Sides: ${sides}</span></div>
-        <div class="small">${a.email}</div>
-        <div class="small">EN: Deduped by last_sent_signal_time. 中文：按 last_sent_signal_time 去重。</div>
-      </div>`;
-  }).join("");
-}
-async function refreshAlerts(){
-  const hint=document.getElementById("alertsHint");
-  if(!isPro()){
-    hint.innerHTML="EN: Pro only. Upgrade to enable email alerts. 中文：仅Pro可用邮件提醒，请升级。";
-    document.getElementById("alertsList").innerHTML=`<div class="small" style="color:rgba(255,71,87,.9);">
-      EN: Pro only.<br>中文：仅Pro可用。
-    </div>`;
-    return;
-  }
-  hint.innerHTML="EN: Alerts enabled (NEW signals only, deduped). 中文：提醒已启用（仅新信号，已去重）。";
-  const res=await apiListAlerts();
-  renderAlertsList(res.items||[]);
-}
-
-/** ===== Affiliate Dashboard ===== */
-function openAffModal(){ document.getElementById("affModal").style.display="flex"; }
-function closeAffModal(){ document.getElementById("affModal").style.display="none"; }
-function affLink(ref){
-  const base = location.origin + location.pathname;
-  return `${base}?ref=${encodeURIComponent(ref)}`;
-}
-async function loadAff(){
-  const fromD=document.getElementById("affFrom").value;
-  const toD=document.getElementById("affTo").value;
-  const fromTs = fromD ? dateToTs(fromD,false) : 0;
-  const toTs = toD ? dateToTs(toD,true) : Math.floor(Date.now()/1000);
-
-  const res=await apiAffiliates(fromTs,toTs);
-  if(!res.ok){
-    toastBilingual("Forbidden or unavailable.","无权限或接口不可用。","error");
-    return;
-  }
-  const rows=res.rows||[];
-  const tb=document.getElementById("affTable");
-  const empty=document.getElementById("affEmptyHint");
-  tb.innerHTML="";
-
-  let totalPay=0, totalCents=0;
-  for(const r of rows){
-    const cents=Number(r.total_cents||0);
-    const usd=(cents/100).toFixed(2);
-    const comm=(cents/100*0.20).toFixed(2);
-    totalPay += Number(r.payments||0);
-    totalCents += cents;
-    tb.innerHTML += `
-      <tr class="tr">
-        <td>${r.ref}</td>
-        <td>${r.payments}</td>
-        <td>$${usd}</td>
-        <td>$${comm}</td>
-      </tr>`;
-  }
-
-  empty.style.display = rows.length ? "none":"block";
-  document.getElementById("affTotalPay").innerText = String(totalPay);
-  document.getElementById("affTotalUsd").innerText = (totalCents/100).toFixed(2);
-  document.getElementById("affTotalComm").innerText = (totalCents/100*0.20).toFixed(2);
-}
-function exportAffCsv(){
-  const fromD=document.getElementById("affFrom").value;
-  const toD=document.getElementById("affTo").value;
-  const fromTs = fromD ? dateToTs(fromD,false) : 0;
-  const toTs = toD ? dateToTs(toD,true) : Math.floor(Date.now()/1000);
-  window.open(`${API_BASE}/api/admin/affiliates.csv?fromTs=${fromTs}&toTs=${toTs}`, "_blank");
-}
-
-/** ===== Partner Center ===== */
-function openPartnerModal(){ document.getElementById("partnerModal").style.display="flex"; }
-function closePartnerModal(){ document.getElementById("partnerModal").style.display="none"; }
-
-/** ===== Main load ===== */
-async function loadAll(){
-  document.getElementById("signals").innerHTML="Loading...";
-  clearChartOverlay();
-
-  const barsRes=await apiBars(symbol,tf);
-  if(!barsRes.ok){
-    const en=barsRes.message||"No data returned from provider.";
-    const zh="数据源未返回数据，可能是标的格式/覆盖范围/权限限制。";
-    setChartOverlay(en,zh);
-    updateMarketPulse({bars:[]},{});
-
-    const steps=(barsRes.next_steps||[]).map(s=>`• ${s}`).join("<br>");
-    document.getElementById("signals").innerHTML=
-      `<div style="color:#ff4757;font-weight:900;">No Data</div>
-       <div style="margin-top:10px;color:#bbb;line-height:1.7;">
-         <div><b>EN:</b> ${en}</div>
-         <div style="margin-top:6px;"><b>中文:</b> ${zh}</div>
-         ${steps?`<div style="margin-top:10px;color:#8b949e;">${steps}</div>`:""}
-       </div>`;
-    toastBilingual(en,zh,"error");
-
-    candleSeries.setData([]); upSeries.setData([]); dnSeries.setData([]); chart.setMarkers([]);
-    clearRiskLines(); enforceProUI();
-    return;
-  }
-
-  const bars=(barsRes.bars||[]).map(b=>({time:b.time,open:+b.open,high:+b.high,low:+b.low,close:+b.close}));
-  candleSeries.setData(bars);
-
-  const sigRes=await apiSignals(symbol,tf);
-  lastSignalsPayload=sigRes;
-
-  updateMarketPulse(barsRes, sigRes);
-
-  if(sigRes.pro){
-    document.getElementById("status").innerHTML="Pro Activated · Real-time";
-    document.getElementById("status").style.background="linear-gradient(90deg,#00ff88,#00d4ff)";
-    document.getElementById("status").style.color="#000";
-    document.getElementById("watermark").style.display="none";
-    document.getElementById("upgradeBtn").style.display="none";
-  }else{
-    const ds=Number(sigRes.delaySec||60);
-    document.getElementById("status").innerHTML=`Free Version · ${ds}s Signal Delay`;
-    document.getElementById("status").style.background="rgba(0,255,136,0.15)";
-    document.getElementById("status").style.color="var(--green)";
-    document.getElementById("watermark").style.display="block";
-    document.getElementById("upgradeBtn").style.display="block";
-  }
-
-  enforceProUI();
-
-  if(document.getElementById("showDarriusAI").checked){
-    upSeries.setData(sigRes?.trendLines?.up||[]);
-    dnSeries.setData(sigRes?.trendLines?.dn||[]);
-  }else{
-    upSeries.setData([]); dnSeries.setData([]);
-  }
-
-  const markers=(sigRes.markers||[]).map(m=>({
-    time:m.time,
-    position:m.position || (m.text==="B"?"belowBar":"aboveBar"),
-    color:(m.text==="B")?"#ff1493":"#ffff00",
-    shape:m.shape||"circle",
-    text:m.text||""
-  }));
-  chart.setMarkers(markers);
-
-  renderSignalsCards(sigRes);
-  loadPinnedRisk();
-  refreshAlerts();
-  refreshAccountUI();
-}
-
-/** ===== Account UI ===== */
-async function refreshAccountUI(){
-  const me = await apiGetMe().catch(()=>({}));
-  const signedIn=!!me?.email;
-  document.getElementById("btnSignIn").style.display = signedIn?"none":"inline-block";
-  document.getElementById("btnLogout").style.display = signedIn?"inline-block":"none";
-  document.getElementById("btnPortal").style.display = signedIn?"inline-block":"none";
-  document.getElementById("btnAffiliate").style.display = me?.is_admin ? "inline-block" : "none";
-}
-
-/** ===== Events ===== */
-document.getElementById("btnLoadSymbol").onclick=()=>{
-  const v=document.getElementById("customSymbol").value.trim().toUpperCase();
-  if(!v) return;
-  symbol=v;
-  document.getElementById("symbolSelect").value=v;
-  clearPinnedRisk(); clearRiskLines();
-  loadAll();
-};
-document.getElementById("symbolSelect").onchange=(e)=>{
-  symbol=String(e.target.value).toUpperCase();
-  document.getElementById("customSymbol").value=symbol;
-  clearPinnedRisk(); clearRiskLines();
-  loadAll();
-};
-document.querySelectorAll(".tf-btn").forEach(b=>b.onclick=()=>{
-  document.querySelector(".tf-btn.active")?.classList.remove("active");
-  b.classList.add("active");
-  tf=b.dataset.tf;
-  clearPinnedRisk(); clearRiskLines();
-  loadAll();
+let chart = LightweightCharts.createChart(document.getElementById("chart"),{
+  layout:{background:{color:"#0b0f17"},textColor:"#ccc"},
+  grid:{vertLines:{color:"transparent"},horzLines:{color:"transparent"}}
 });
-document.getElementById("showDarriusAI").onchange=()=>loadAll();
+let candle = chart.addCandlestickSeries();
+let upLine = chart.addLineSeries({color:"#00ff88",lineWidth:2});
+let dnLine = chart.addLineSeries({color:"#ff4757",lineWidth:2});
 
-document.getElementById("upgradeBtn").onclick=async()=>{
-  document.getElementById("paywall").style.display="flex";
-  await hydratePaywallPrices();
-};
-document.getElementById("closePay").onclick=()=>document.getElementById("paywall").style.display="none";
+async function api(url,opts){const r=await fetch(url,opts);return r.json();}
 
-async function startCheckout(priceId){
-  // ✅ persist ref from URL if present
-  const p=new URLSearchParams(location.search);
-  const refFromUrl = p.get("ref") || "";
-  if(refFromUrl) setRefCode(refFromUrl);
+async function reload(){
+  const s=symbol.value, t=tf.value;
+  const bars=await api(`/api/bars?symbol=${s}&tf=${t}`);
+  if(!bars.ok){alert(bars.message);return;}
+  candle.setData(bars.bars);
+  price.innerText=bars.bars.at(-1).close.toFixed(2);
 
-  // ✅ persistent attribution (30 days)
-  const ref = getRefCode();
+  const sig=await api(`/api/signals?symbol=${s}&tf=${t}`);
+  signals.innerHTML="";
+  if(sig.signals){
+    sig.signals.forEach(x=>{
+      const d=document.createElement("div");
+      d.className="signal "+(x.side==="S"?"sell":"");
+      d.innerText=`${x.side} @ ${x.signal_price}`;
+      signals.appendChild(d);
+    });
+  }
+  if(sig.trendLines){
+    upLine.setData(sig.trendLines.up||[]);
+    dnLine.setData(sig.trendLines.dn||[]);
+  }
+}
+reload();
 
-  const res=await apiCheckout(priceId, ref);
-  if(res.url) location.href=res.url;
-  else toastBilingual("Checkout failed (sign in first).","拉起支付失败（请先登录）。","error");
+async function startCheckout(){
+  const r=await api("/api/stripe/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:"monthly"})});
+  if(r.url) location.href=r.url;
 }
 
-document.getElementById("btnPayHalfMonthly").onclick=()=>startCheckout(STRIPE_PRICE_HALFMONTHLY);
-document.getElementById("btnPayMonthly").onclick=()=>startCheckout(STRIPE_PRICE_MONTHLY);
-document.getElementById("btnPayAnnual").onclick=()=>startCheckout(STRIPE_PRICE_ANNUAL);
-document.getElementById("btnPayLifetime").onclick=()=>startCheckout(STRIPE_PRICE_LIFETIME);
+async function saveAlert(){
+  const email=alertEmail.value;
+  const s=symbol.value, t=tf.value;
+  const r=await api("/api/alerts/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,symbol:s,tf:t,sides:"B,S",enabled:true})});
+  alert(r.ok?"Saved":"Failed");
+}
 
-document.getElementById("btnPortal").onclick=async()=>{
-  const res=await apiPortal();
-  if(res.url) location.href=res.url;
-  else toastBilingual("Portal unavailable.","无法打开管理页面。","error");
-};
-
-const authModal=document.getElementById("authModal");
-document.getElementById("btnSignIn").onclick=()=>authModal.style.display="flex";
-document.getElementById("btnAuthCancel").onclick=()=>authModal.style.display="none";
-document.getElementById("btnAuthSend").onclick=async()=>{
-  const email=document.getElementById("authEmail").value.trim();
-  if(!email.includes("@")){ toastBilingual("Please enter a valid email.","请输入有效邮箱。","error"); return; }
-  try{
-    await apiAuthStart(email);
-    authModal.style.display="none";
-    toastBilingual("Sign-in link sent. Please check your email.","登录链接已发送，请查收邮箱。","success");
-  }catch(e){
-    toastBilingual("Failed to send link.","发送失败。","error");
-  }
-};
-document.getElementById("btnLogout").onclick=async()=>{
-  await apiLogout();
-  toastBilingual("Logged out.","已退出登录。","success");
-  refreshAccountUI();
-};
-
-// Risk Copilot -> backend /api/risk
-document.getElementById("btnComputeRisk").onclick=async()=>{
-  const latest=lastSignalsPayload?.signals?.[0];
-  if(!latest){ toastBilingual("No signal yet.","暂无信号。","error"); return; }
-
-  const out=await apiRisk({
-    symbol, tf,
-    signal:{ side:latest.side, time:latest.time, signal_price:latest.signal_price, entry_price:latest.entry_price },
-    rr1:2, rr2:3, useATR:false
-  });
-  if(!out.ok){
-    toastBilingual("Risk compute failed.","风险计算失败。","error");
-    return;
-  }
-  drawRiskLines(out);
-  toastBilingual("Risk lines updated.","风险线已更新。","success");
-
-  const pin=document.getElementById("pinRiskLines");
-  if(pin.checked && isPro()){
-    savePinnedRisk(out);
-    toastBilingual("Pinned to localStorage.","已固定到本地（localStorage）。","success");
-  }
-};
-
-document.getElementById("btnClearRisk").onclick=()=>{
-  clearRiskLines(); clearPinnedRisk();
-  document.getElementById("riskSummary").innerHTML=`EN: Click “Compute Risk” to generate Entry/Stop/TP and draw risk lines on chart.<br>中文：点击“Compute Risk”生成入场/止损/止盈并绘制风险线。`;
-  toastBilingual("Risk cleared.","风险线已清除。","success");
-};
-
-document.getElementById("pinRiskLines").onchange=(e)=>{
-  if(!isPro()){
-    e.target.checked=false;
-    toastBilingual("Pro only.","仅Pro可用。","error");
-    return;
-  }
-  if(!e.target.checked){
-    clearPinnedRisk();
-    toastBilingual("Unpinned.","已取消固定。","success");
-  }else{
-    toastBilingual("Pinned (per symbol/tf).","已固定（按标的/周期保存）。","success");
-  }
-};
-
-document.getElementById("btnExportPng").onclick=exportPng;
-document.getElementById("btnShareLink").onclick=shareLink;
-
-// Alerts
-document.getElementById("btnSaveAlert").onclick=async()=>{
-  if(!isPro()){
-    toastBilingual("Pro only. Upgrade to enable email alerts.","仅Pro可用邮件提醒，请升级。","error");
-    return;
-  }
-  const email=document.getElementById("alertEmail").value.trim();
-  if(!email.includes("@")){ toastBilingual("Please enter a valid email.","请输入有效邮箱。","error"); return; }
-
-  const b=document.getElementById("alertSideB").checked;
-  const s=document.getElementById("alertSideS").checked;
-  if(!b && !s){ toastBilingual("Select at least one side.","至少选择买入或卖出。","error"); return; }
-  const sides = [b?"B":null, s?"S":null].filter(Boolean).join(",");
-
-  const res=await apiSaveAlert({ email, symbol, tf, sides, enabled:true });
-  if(res.ok){
-    toastBilingual("Alert saved.","提醒已保存。","success");
-    refreshAlerts();
-  }else{
-    toastBilingual("Save failed.","保存失败。","error");
-  }
-};
-document.getElementById("btnRefreshAlerts").onclick=refreshAlerts;
-
-// Affiliate Dashboard
-document.getElementById("btnAffiliate").onclick=openAffModal;
-document.getElementById("btnAffClose").onclick=closeAffModal;
-document.getElementById("btnAffLoad").onclick=loadAff;
-document.getElementById("btnAffCsv").onclick=exportAffCsv;
-document.getElementById("btnAffCopy").onclick=async()=>{
-  const ref=document.getElementById("affRef").value.trim();
-  if(!ref){ toastBilingual("Enter a ref code.","请输入ref码。","error"); return; }
-  const link=affLink(ref);
-  document.getElementById("affLinkText").innerHTML=`<span class="pill">Link</span> <span style="color:rgba(230,237,243,.9)">${link}</span>`;
-  await navigator.clipboard.writeText(link);
-  toastBilingual("Affiliate link copied.","推广链接已复制。","success");
-};
-
-// Partner Center
-const partnerModal=document.getElementById("partnerModal");
-document.getElementById("btnPartner").onclick=openPartnerModal;
-document.getElementById("btnPartnerClose").onclick=closePartnerModal;
-
-document.getElementById("btnPartnerCopy").onclick=async()=>{
-  const ref=document.getElementById("partnerRef").value.trim();
-  if(!ref){ toastBilingual("Enter your ref code.","请输入你的ref码。","error"); return; }
-  const link = `${location.origin + location.pathname}?ref=${encodeURIComponent(ref)}`;
-  document.getElementById("partnerLinkText").innerHTML = `<span class="pill">Link</span> <span style="color:rgba(230,237,243,.9)">${link}</span>`;
-  await navigator.clipboard.writeText(link);
-  toastBilingual("Partner link copied.","推广链接已复制。","success");
-};
-
-document.getElementById("btnPartnerLoad").onclick=async()=>{
-  const ref=document.getElementById("partnerRef").value.trim();
-  if(!ref){ toastBilingual("Enter your ref code.","请输入你的ref码。","error"); return; }
-  const res = await apiPartnerStats(ref);
-  if(!res.ok){
-    toastBilingual(res.message||"Stats unavailable (check login/permission).","无法获取统计（请检查登录/权限）。","error");
-    return;
-  }
-  const cents = Number(res.total_cents||0);
-  const usd = (cents/100);
-  document.getElementById("partnerPay").innerText = String(res.payments||0);
-  document.getElementById("partnerUsd").innerText = usd.toFixed(2);
-  document.getElementById("partnerComm").innerText = (usd*0.20).toFixed(2);
-};
-
-/** ===== Boot ===== */
-(async function boot(){
-  const p=new URLSearchParams(location.search);
-
-  // ✅ persist referral on landing
-  const refFromUrl = p.get("ref") || "";
-  if(refFromUrl) setRefCode(refFromUrl);
-  updateRefBadge();
-
-  // auto show paywall
-  if(p.get("upgrade")==="1"){
-    document.getElementById("paywall").style.display="flex";
-    await hydratePaywallPrices();
-  }
-
-  document.getElementById("symbolSelect").value=symbol;
-  document.getElementById("customSymbol").value=symbol;
-  drawSentimentRing(50);
-
-  await loadAll();
-})();
+async function share(){
+  const r=await api("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload:{symbol:symbol.value,tf:tf.value}})});
+  navigator.clipboard.writeText(r.url);
+  alert("Share link copied");
+}
 </script>
+
 </body>
 </html>
-
-
