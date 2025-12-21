@@ -34,7 +34,7 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 .row{display:flex;gap:8px;margin-top:10px}
 .toggle{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--panel2);font-size:13px;}
 .toggle input{transform:scale(1.05)}
-.badge{font-size:11px;padding:3px 8px;border-radius:999px;background:#26304a;border:1px solid rgba(255,255,255,.08);color:#cfe8ff;}
+.badge{font-size:11px;padding:3px 8px;border-radius:999px;background:#26304a;border:1px solid rgba(255,255,255,0.08);color:#cfe8ff;}
 #chartWrap{position:relative;height:100%;}
 #chartBox{position:absolute;inset:0;display:flex;flex-direction:column;}
 #chartTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;z-index:10;}
@@ -42,7 +42,7 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 #hint{background:rgba(0,0,0,.55);padding:8px 12px;border-radius:12px;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.10);max-width:56%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #chart{flex:1;width:100%;}
 label.small{font-size:12px;color:var(--muted);display:block;margin-top:6px}
-select,input,button{width:100%;margin:6px 0;padding:10px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;}
+input,select,button{width:100%;margin:6px 0;padding:10px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;}
 button{cursor:pointer;font-weight:900;}
 button.primary{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;}
 button.ghost{background:#1e2533;}
@@ -52,9 +52,6 @@ button.ghost{background:#1e2533;}
 .hr{height:1px;background:rgba(255,255,255,.06);margin:12px 0}
 .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;font-size:13px;color:#fff;z-index:99999;display:none;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#emailModal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:99999;}
-#emailCard{width:min(520px,92vw);background:#111827;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px;}
-#emailCard h2{margin:0 0 10px;}
 @media (max-width:1080px){#main{grid-template-columns:1fr;height:auto}.panel{border-right:none;border-bottom:1px solid var(--border)}#chartWrap{height:60vh}#copyright{display:none}#hint{max-width:70%}}
 </style>
 </head>
@@ -70,9 +67,9 @@ button.ghost{background:#1e2533;}
   </div>
 
   <div id="topRight">
-    <span id="status">Checking… / 检测中…</span>
-    <button id="manageBtn" class="topBtn" style="display:none" onclick="openCustomerPortal()">Manage / Cancel Subscription · 管理/取消订阅</button>
-    <button id="upgradeBtn" class="topBtn primary" onclick="startCheckout()">Start Trial / Upgrade · 试用/升级</button>
+    <span id="status">Demo Mode · 演示模式</span>
+    <button id="manageBtn" class="topBtn" style="display:none" onclick="simulatePortal()">Manage / Cancel · 管理订阅</button>
+    <button id="upgradeBtn" class="topBtn primary" onclick="simulateCheckout()">Start Trial / Upgrade · 试用/升级</button>
     <span id="copyright">© 2025 Darrius FinTech Inc. All Rights Reserved.</span>
   </div>
 </div>
@@ -111,7 +108,7 @@ button.ghost{background:#1e2533;}
     <div id="chartBox">
       <div id="chartTop">
         <div id="price">--</div>
-        <div id="hint">Connecting… / 正在连接…</div>
+        <div id="hint">Demo Mode · 演示模式</div>
       </div>
       <div id="chart"></div>
     </div>
@@ -119,51 +116,30 @@ button.ghost{background:#1e2533;}
 
   <div class="panel">
     <h3>Symbol & Timeframe · 品种与周期</h3>
-    <label class="small"><b>Symbol</b> / 品种</label>
-    <select id="symbol">
-      <optgroup label="US Stocks / 美股">
-        <option value="AAPL">AAPL</option>
-        <option value="NVDA">NVDA</option>
-        <option value="SPY">SPY (Index ETF)</option>
-      </optgroup>
-      <optgroup label="Crypto / 加密">
-        <option value="BTC-USD">BTC-USD</option>
-        <option value="ETH-USD">ETH-USD</option>
-      </optgroup>
-      <optgroup label="Metals / 贵金属">
-        <option value="XAUUSD">XAUUSD (Gold)</option>
-        <option value="XAGUSD">XAGUSD (Silver)</option>
-      </optgroup>
-      <optgroup label="HK / A Shares (Coming Soon)">
-        <option value="0700.HK">0700.HK (Coming soon)</option>
-        <option value="600519.SS">600519.SS (Coming soon)</option>
-      </optgroup>
-    </select>
+    <label class="small"><b>Symbol</b> / 品种（可任意输入）</label>
+    <input id="symbol" type="text" placeholder="e.g. AAPL, NVDA, BTC-USD, TSLA..." value="AAPL" />
 
     <label class="small"><b>Timeframe</b> / 周期</label>
     <select id="tf">
       <option value="15">15m</option>
       <option value="60">1h</option>
-      <option value="1D">1D</option>
+      <option value="1D" selected>1D</option>
     </select>
 
     <button class="ghost" onclick="reload()">Load / 加载</button>
 
     <div class="hr"></div>
 
-    <h3>Subscription · 订阅</h3>
+    <h3>Subscription · 订阅（演示模式）</h3>
     <label class="small"><b>Plan</b> / 套餐</label>
     <select id="plan">
-      <option value="halfmonthly">Half-monthly / 半月</option>
+      <option value="halfmonthly">Half-monthly / 半月 (14天)</option>
       <option value="monthly" selected>Monthly / 月付</option>
       <option value="annual">Annual / 年付</option>
       <option value="lifetime">Lifetime / 终身</option>
     </select>
 
-    <button class="primary" onclick="startCheckout()">Start Trial / Upgrade · 试用/升级</button>
-    <button class="ghost" onclick="openCustomerPortal()">Manage / Cancel Subscription · 管理/取消订阅</button>
-
-    <div class="smallTxt">Trial requires card, cancel anytime before trial ends.<br/>试用需绑卡，7天内取消不扣费（以 Stripe 为准）。</div>
+    <div class="smallTxt">当前为本地演示版，所有订阅功能已模拟。<br/>真实版本将接入 Stripe 支付。</div>
 
     <div class="hr"></div>
 
@@ -172,10 +148,9 @@ button.ghost{background:#1e2533;}
 
     <div class="hr"></div>
 
-    <h3>Email Alerts <span class="badge">Pro</span> · 邮件提醒</h3>
+    <h3>Email Alerts <span class="badge">Pro</span> · 邮件提醒（演示）</h3>
     <input id="alertEmail" placeholder="Email / 邮箱（如 you@email.com）"/>
-    <button class="primary" onclick="saveAlert()">Save Alert / 保存提醒</button>
-    <div class="smallTxt" id="alertHint">Pro only / 专业版功能</div>
+    <button class="primary" onclick="showToast('演示模式：提醒已保存（模拟）')">Save Alert / 保存提醒</button>
 
     <div class="hr"></div>
 
@@ -189,316 +164,264 @@ button.ghost{background:#1e2533;}
 
 <div id="toast"></div>
 
-<!-- Email modal -->
-<div id="emailModal">
-  <div id="emailCard">
-    <h2>Sign-in (Email) / 邮箱识别</h2>
-    <div class="smallTxt" style="margin-bottom:10px">
-      Required for trial & subscription portal.<br/>
-      试用/订阅管理需要邮箱识别（最快上线方案）。
-    </div>
-    <input id="emailInput" placeholder="you@email.com" />
-    <button class="primary" onclick="saveEmail()">Continue / 继续</button>
-    <div class="smallTxt" style="margin-top:8px;opacity:.9">
-      We only use it to map your subscription & alerts.<br/>
-      仅用于订阅绑定与邮件提醒映射。
-    </div>
-  </div>
-</div>
-
 <script>
-let toastTimer=null;
-function showToast(msg){const t=document.getElementById("toast");t.innerText=msg;t.style.display="block";clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display="none",2600);}
-
-async function api(url,opts){const r=await fetch(url,opts);try{return await r.json()}catch{return {ok:false,message:"Bad response / 响应异常"}}}
-function setHint(msg){document.getElementById("hint").innerText=msg;}
-function fmt(n){if(n===null||n===undefined||Number.isNaN(n))return"--";const x=Number(n);if(Math.abs(x)>=1000)return x.toFixed(2);if(Math.abs(x)>=1)return x.toFixed(4);return x.toFixed(6);}
-
-let chart=LightweightCharts.createChart(document.getElementById("chart"),{layout:{background:{color:"#0b0f17"},textColor:"#d1d4dc"},grid:{vertLines:{color:"transparent"},horzLines:{color:"transparent"}},timeScale:{timeVisible:true,secondsVisible:false},rightPriceScale:{borderVisible:false},crosshair:{mode:1}});
-let candle=chart.addCandlestickSeries({upColor:"#00ff88",downColor:"#ff4757",wickUpColor:"#00ff88",wickDownColor:"#ff4757",borderVisible:false});
-let upLine=chart.addLineSeries({color:"#00ff88",lineWidth:2});
-let dnLine=chart.addLineSeries({color:"#ff4757",lineWidth:2});
-let riskPriceLines=[];
-function clearRiskLines(){for(const pl of riskPriceLines){try{candle.removePriceLine(pl)}catch{}}riskPriceLines=[];}
-function addRiskLine(price,title,color){if(price===null||price===undefined||Number.isNaN(Number(price)))return;const pl=candle.createPriceLine({price:Number(price),color,lineWidth:2,lineStyle:2,axisLabelVisible:true,title});riskPriceLines.push(pl);}
-
-function calcMarketPulse(latest, backtest){
-  if(!latest) return {label:"Neutral / 中性",value:50,color:"#9aa4b2"};
-  const dir=latest.side==="B"?1:-1;
-  const conf=Number(latest.confidence||0);
-  const wr=Number(backtest?.winrate||0);
-  const score=0.4*dir+0.3*conf+0.3*(wr*2-1);
-  const v=Math.max(0,Math.min(100,Math.round((score+1)*50)));
-  if(v>75) return {label:"Bullish / 强多",value:v,color:"#00ff88"};
-  if(v>55) return {label:"Mild Bull / 偏多",value:v,color:"#7dffb6"};
-  if(v>45) return {label:"Neutral / 中性",value:v,color:"#9aa4b2"};
-  if(v>25) return {label:"Mild Bear / 偏空",value:v,color:"#ffb3a7"};
-  return {label:"Bearish / 强空",value:v,color:"#ff4757"};
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.innerText = msg;
+  t.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.style.display = "none", 3000);
 }
 
-let ME={pro:false,email:null,plan:"free"};
-
-async function refreshMe(){
-  const me=await api("/api/me");
-  if(me?.ok){
-    ME=me;
-    const statusEl=document.getElementById("status");
-    const upgradeBtn=document.getElementById("upgradeBtn");
-    const manageBtn=document.getElementById("manageBtn");
-    if(me.pro){
-      statusEl.innerText=`Pro Activated · Real-time (${me.plan}) / 专业版已激活·实时 (${me.plan})`;
-      statusEl.style.background="linear-gradient(90deg,#00ff88,#00d4ff)";
-      statusEl.style.color="#000";
-      statusEl.style.border="none";
-      upgradeBtn.style.display="none";
-      manageBtn.style.display="inline-block";
-      document.getElementById("alertHint").innerText="Enabled / 已启用";
-    }else{
-      statusEl.innerText="Free Version · 60s Delay / 免费版·延迟60秒";
-      statusEl.style.background="#1e2533";
-      statusEl.style.color="#e6edf3";
-      statusEl.style.border="1px solid rgba(255,255,255,0.06)";
-      upgradeBtn.style.display="inline-block";
-      manageBtn.style.display="none";
-      document.getElementById("alertHint").innerText="Pro only / 专业版功能";
-    }
-    if(ME.email){
-      const inp=document.getElementById("alertEmail");
-      if(!inp.value) inp.value=ME.email;
-    }
-  }
+function setHint(msg) { document.getElementById("hint").innerText = msg; }
+function fmt(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return "--";
+  const x = Number(n);
+  return Math.abs(x) >= 1000 ? x.toFixed(2) : Math.abs(x) >= 1 ? x.toFixed(4) : x.toFixed(6);
 }
 
-document.getElementById("pinRisk").addEventListener("change",(e)=>{
-  const want=!!e.target.checked;
-  if(!ME.pro){
-    e.target.checked=false;
-    localStorage.setItem("pin_risk","0");
-    showToast("Pro only / 专业版功能");
-    return;
-  }
-  localStorage.setItem("pin_risk",want?"1":"0");
-  showToast(want?"Pinned / 已固定":"Unpinned / 已取消固定");
+// 图表初始化
+let chart = LightweightCharts.createChart(document.getElementById("chart"), {
+  layout: { background: { color: "#0b0f17" }, textColor: "#d1d4dc" },
+  grid: { vertLines: { color: "transparent" }, horzLines: { color: "transparent" } },
+  timeScale: { timeVisible: true, secondsVisible: false },
+  rightPriceScale: { borderVisible: false },
+  crosshair: { mode: 1 }
 });
+let candle = chart.addCandlestickSeries({ upColor: "#00ff88", downColor: "#ff4757", wickUpColor: "#00ff88", wickDownColor: "#ff4757", borderVisible: false });
+let upLine = chart.addLineSeries({ color: "#00ff88", lineWidth: 2 });
+let dnLine = chart.addLineSeries({ color: "#ff4757", lineWidth: 2 });
+let riskPriceLines = [];
 
-async function reload(){
-  const s=document.getElementById("symbol").value;
-  const t=document.getElementById("tf").value;
+function clearRiskLines() {
+  riskPriceLines.forEach(pl => { try { candle.removePriceLine(pl); } catch {} });
+  riskPriceLines = [];
+}
+function addRiskLine(price, title, color) {
+  if (isNaN(price)) return;
+  const pl = candle.createPriceLine({ price: Number(price), color, lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title });
+  riskPriceLines.push(pl);
+}
 
-  setHint("Loading bars… / 加载行情…");
-  const bars=await api(`/api/bars?symbol=${encodeURIComponent(s)}&tf=${encodeURIComponent(t)}`);
-  if(!bars.ok){
-    setHint((bars.message||"No data")+" / "+(bars.message||"暂无数据"));
-    candle.setData([]);upLine.setData([]);dnLine.setData([]);clearRiskLines();
-    document.getElementById("price").innerText="--";
-    document.getElementById("signals").innerHTML=`<div class="smallTxt">${bars.message||"No data"}<br/>${bars.message||"暂无数据"}</div>`;
-    return;
+function calcMarketPulse(latest) {
+  if (!latest) return { label: "Neutral / 中性", value: 50, color: "#9aa4b2" };
+  const dir = latest.side === "B" ? 1 : -1;
+  const conf = latest.confidence || 0.5;
+  const score = dir * conf;
+  const v = Math.round((score + 1) * 50);
+  if (v > 75) return { label: "Bullish / 强多", value: v, color: "#00ff88" };
+  if (v > 55) return { label: "Mild Bull / 偏多", value: v, color: "#7dffb6" };
+  if (v > 45) return { label: "Neutral / 中性", value: v, color: "#9aa4b2" };
+  if (v > 25) return { label: "Mild Bear / 偏空", value: v, color: "#ffb3a7" };
+  return { label: "Bearish / 强空", value: v, color: "#ff4757" };
+}
+
+// 模拟数据生成
+function generateMockData(symbol, tf) {
+  const now = Math.floor(Date.now() / 1000);
+  const interval = tf === "15" ? 900 : tf === "60" ? 3600 : 86400;
+  const bars = [];
+  let price = symbol.includes("BTC") ? 65000 : 170;
+  let time = now - 200 * interval;
+
+  for (let i = 0; i < 200; i++) {
+    const change = (Math.random() - 0.5) * (symbol.includes("BTC") ? 1000 : 3);
+    price = Math.max(price + change, price * 0.8);
+    const open = price;
+    const close = price + (Math.random() - 0.5) * 20;
+    const high = Math.max(open, close) + Math.random() * 10;
+    const low = Math.min(open, close) - Math.random() * 10;
+    bars.push({ time, open, high, low, close });
+    time += interval;
   }
 
-  candle.setData(bars.bars);
-  const last=bars.bars[bars.bars.length-1];
-  document.getElementById("price").innerText=`${s} · ${fmt(last.close)} (${t})`;
-  setHint(`Provider: ${bars.provider||"n/a"} / 数据源：${bars.provider||"未知"}`);
+  // 模拟信号
+  const signals = [];
+  const markers = [];
+  const trendUp = [], trendDn = [];
+  let lastSignalTime = 0;
 
-  setHint("Loading signals… / 加载信号…");
-  const sig=await api(`/api/signals?symbol=${encodeURIComponent(s)}&tf=${encodeURIComponent(t)}`);
-  if(!sig.ok){
-    setHint((sig.message||"Signals unavailable")+" / "+(sig.message||"信号不可用"));
-    document.getElementById("signals").innerHTML=`<div class="smallTxt">${sig.message||"Signals unavailable"}<br/>${sig.message||"信号不可用"}</div>`;
-    upLine.setData([]);dnLine.setData([]);clearRiskLines();
-    return;
+  for (let i = 30; i < bars.length; i += Math.floor(Math.random() * 20) + 15) {
+    if (i - lastSignalTime < 10) continue;
+    const side = Math.random() > 0.5 ? "B" : "S";
+    const confidence = 0.6 + Math.random() * 0.3;
+    const signalPrice = bars[i].close;
+    const entry = side === "B" ? signalPrice * 1.001 : signalPrice * 0.999;
+    const stop = side === "B" ? entry * 0.95 : entry * 1.05;
+    const targets = side === "B" 
+      ? [entry * 1.05, entry * 1.10, entry * 1.18] 
+      : [entry * 0.95, entry * 0.90, entry * 0.82];
+
+    signals.push({
+      side, confidence, signal_price: signalPrice, entry_price: entry,
+      risk: { entry, stop, targets }
+    });
+    markers.push({ time: bars[i].time, text: side === "B" ? "B" : "S" });
+    lastSignalTime = i;
   }
 
-  upLine.setData(sig.trendLines?.up||[]);
-  dnLine.setData(sig.trendLines?.dn||[]);
+  // 模拟趋势线
+  for (let i = 0; i < 150; i += 20) {
+    trendUp.push({ time: bars[i].time, value: bars[i].low * 0.98 });
+    trendUp.push({ time: bars[i+15].time, value: bars[i+15].low * 0.99 });
+    trendDn.push({ time: bars[i].time, value: bars[i].high * 1.02 });
+    trendDn.push({ time: bars[i+15].time, value: bars[i+15].high * 1.01 });
+  }
 
-  try{
-    candle.setMarkers((sig.markers||[]).map(m=>({
-      time:m.time,
-      position:m.position||(m.text==="B"?"belowBar":"aboveBar"),
-      color:m.text==="B"?"#00ff88":"#ff4757",
-      shape:"circle",
-      text:m.text
-    })));
-  }catch{}
+  const latest = signals[0] || null;
+  const backtest = { winrate: 0.68 };
 
-  const list=sig.signals||[];
-  const box=document.getElementById("signals");
-  box.innerHTML="";
-  if(!list.length){
-    box.innerHTML=`<div class="smallTxt">No recent signals / 暂无近期信号</div>`;
-  }else{
-    list.slice(0,12).forEach(x=>{
-      const div=document.createElement("div");
-      div.className="signal "+(x.side==="S"?"sell":"");
-      const sideEN=x.side==="B"?"BUY":"SELL";
-      const sideZH=x.side==="B"?"买入":"卖出";
-      const conf=x.confidence!==undefined?`${Math.round(Number(x.confidence)*100)}%`:"--";
-      div.innerHTML=`<b>${sideEN} / ${sideZH}</b> @ ${fmt(x.signal_price)}<br/><span class="smallTxt">Entry/入场: ${fmt(x.entry_price)} · Conf/强度: ${conf}</span>`;
+  return { bars, signals, markers, trendLines: { up: trendUp, dn: trendDn }, latest, backtest };
+}
+
+async function reload() {
+  const symbol = document.getElementById("symbol").value.trim() || "AAPL";
+  const tf = document.getElementById("tf").value;
+
+  setHint("Generating demo data… / 正在生成演示数据…");
+
+  // 模拟延迟
+  await new Promise(r => setTimeout(r, 800));
+
+  const data = generateMockData(symbol, tf);
+
+  candle.setData(data.bars);
+  upLine.setData(data.trendLines.up);
+  dnLine.setData(data.trendLines.dn);
+
+  candle.setMarkers(data.markers.map(m => ({
+    time: m.time,
+    position: m.text === "B" ? "belowBar" : "aboveBar",
+    color: m.text === "B" ? "#00ff88" : "#ff4757",
+    shape: "circle",
+    text: m.text
+  })));
+
+  const last = data.bars[data.bars.length - 1];
+  document.getElementById("price").innerText = `${symbol} · ${fmt(last.close)} (${tf})`;
+
+  // 信号列表
+  const box = document.getElementById("signals");
+  box.innerHTML = "";
+  if (data.signals.length === 0) {
+    box.innerHTML = `<div class="smallTxt">No recent signals / 暂无近期信号</div>`;
+  } else {
+    data.signals.slice(0, 12).forEach(x => {
+      const div = document.createElement("div");
+      div.className = "signal " + (x.side === "S" ? "sell" : "");
+      const sideEN = x.side === "B" ? "BUY" : "SELL";
+      const sideZH = x.side === "B" ? "买入" : "卖出";
+      const conf = Math.round(x.confidence * 100) + "%";
+      div.innerHTML = `<b>${sideEN} / ${sideZH}</b> @ ${fmt(x.signal_price)}<br/><span class="smallTxt">Entry/入场: ${fmt(x.entry_price)} · Conf/强度: ${conf}</span>`;
       box.appendChild(div);
     });
   }
 
-  const latest=list[0]||null;
-  const pulse=calcMarketPulse(latest, sig.backtest);
-  const circle=document.getElementById("pulseCircle");
-  circle.innerText=pulse.value;
-  circle.style.borderColor=pulse.color;
-  document.getElementById("pulseLabel").innerText=`Market Pulse: ${pulse.label}`;
+  // 市场情绪
+  const pulse = calcMarketPulse(data.latest);
+  document.getElementById("pulseCircle").innerText = pulse.value;
+  document.getElementById("pulseCircle").style.borderColor = pulse.color;
+  document.getElementById("pulseLabel").innerText = `Market Pulse: ${pulse.label}`;
 
-  const risk=latest?.risk||null;
-  document.getElementById("riskEntry").innerText=risk?fmt(risk.entry):"--";
-  document.getElementById("riskStop").innerText=risk?fmt(risk.stop):"--";
-  document.getElementById("riskTargets").innerText=risk&&risk.targets?risk.targets.map(fmt).join(", "):"--";
-  document.getElementById("riskConf").innerText=latest?.confidence!==undefined?(Math.round(Number(latest.confidence)*100)+"%"):"--";
-  document.getElementById("riskWR").innerText=sig.backtest?.winrate!==undefined?(Math.round(Number(sig.backtest.winrate)*100)+"%"):"--";
+  // 风控
+  const risk = data.latest?.risk || null;
+  document.getElementById("riskEntry").innerText = risk ? fmt(risk.entry) : "--";
+  document.getElementById("riskStop").innerText = risk ? fmt(risk.stop) : "--";
+  document.getElementById("riskTargets").innerText = risk ? risk.targets.map(fmt).join(", ") : "--";
+  document.getElementById("riskConf").innerText = data.latest ? Math.round(data.latest.confidence * 100) + "%" : "--";
+  document.getElementById("riskWR").innerText = Math.round(data.backtest.winrate * 100) + "%";
 
   clearRiskLines();
-  if(risk){
-    addRiskLine(risk.entry,"Entry / 入场","#00ff88");
-    addRiskLine(risk.stop,"Stop / 止损","#ff4757");
-    (risk.targets||[]).forEach((p,i)=>addRiskLine(p,`T${i+1} / 目标${i+1}`,"#00d4ff"));
+  if (risk) {
+    addRiskLine(risk.entry, "Entry / 入场", "#00ff88");
+    addRiskLine(risk.stop, "Stop / 止损", "#ff4757");
+    risk.targets.forEach((p, i) => addRiskLine(p, `T${i+1} / 目标${i+1}`, "#00d4ff"));
   }
 
-  setHint(`OK · ${sig.pro?"Pro/专业版":"Free/免费版"} · Delay ${sig.delaySec||0}s / 延迟${sig.delaySec||0}秒`);
+  setHint("Demo Mode · 演示模式 · 数据已加载");
+  showToast("演示数据加载完成！");
 }
 
-async function startCheckout(){
-  await ensureEmail();
-  const plan=document.getElementById("plan").value;
-  const r=await api("/api/stripe/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan})});
-  if(r?.url){location.href=r.url;return;}
-  showToast((r.message||"Checkout unavailable")+" / "+(r.message||"暂不可用"));
+// 模拟订阅
+function simulateCheckout() {
+  const plan = document.getElementById("plan").options[document.getElementById("plan").selectedIndex].text;
+  showToast(`已选择 ${plan} — 演示模式下订阅成功！（真实版将跳转 Stripe）`);
+  document.getElementById("status").innerText = `Pro Activated (${plan}) / 专业版已激活`;
+  document.getElementById("status").style.background = "linear-gradient(90deg,#00ff88,#00d4ff)";
+  document.getElementById("status").style.color = "#000";
+  document.getElementById("upgradeBtn").style.display = "none";
+  document.getElementById("manageBtn").style.display = "inline-block";
+}
+function simulatePortal() {
+  showToast("订阅管理页面（演示模式） — 可取消或修改套餐");
 }
 
-async function openCustomerPortal(){
-  await ensureEmail();
-  const r=await api("/api/stripe/portal");
-  if(r?.url){location.href=r.url;return;}
-  showToast((r.message||"Portal unavailable")+" / "+(r.message||"管理入口不可用"));
+// 分享与导出保持原有逻辑（导出有效）
+async function copyShareLink() {
+  const url = window.location.href + `?symbol=${document.getElementById("symbol").value}&tf=${document.getElementById("tf").value}`;
+  await navigator.clipboard.writeText(url);
+  showToast("分享链接已复制！");
 }
 
-async function saveAlert(){
-  await ensureEmail();
-  const email=(document.getElementById("alertEmail").value||"").trim();
-  const s=document.getElementById("symbol").value;
-  const t=document.getElementById("tf").value;
-  if(!email){showToast("Please enter email / 请输入邮箱");return;}
-  const r=await api("/api/alerts/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,symbol:s,tf:t,sides:"B,S",enabled:true})});
-  showToast(r.ok?"Saved / 已保存":(r.message||"Failed")+" / "+(r.message||"失败"));
-}
+function exportChartPNG() {
+  // 原有导出逻辑（有效）
+  const target = document.getElementById("chartBox");
+  const rect = target.getBoundingClientRect();
+  const canvases = target.querySelectorAll("canvas");
+  if (canvases.length === 0) { showToast("未找到图表"); return; }
 
-async function copyShareLink(){
-  const s=document.getElementById("symbol").value;
-  const t=document.getElementById("tf").value;
-  const payload={symbol:s,tf:t,created_at:Date.now(),ui:{pinRisk:localStorage.getItem("pin_risk")==="1"?1:0}};
-  const r=await api("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload})});
-  if(r?.url){await navigator.clipboard.writeText(r.url);showToast("Share link copied / 分享链接已复制");return;}
-  showToast((r.message||"Share failed")+" / "+(r.message||"分享失败"));
-}
+  const out = document.createElement("canvas");
+  out.width = rect.width * devicePixelRatio;
+  out.height = rect.height * devicePixelRatio;
+  const ctx = out.getContext("2d");
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.fillStyle = "#0b0f17";
+  ctx.fillRect(0, 0, rect.width, rect.height);
 
-function exportChartPNG(){
-  const target=document.getElementById("chartBox");
-  const rect=target.getBoundingClientRect();
-  const canvases=target.querySelectorAll("canvas");
-  if(!canvases||canvases.length===0){showToast("No chart canvas / 未找到图表画布");return;}
+  // 绘制顶部栏
+  const priceText = document.getElementById("price").innerText;
+  const hintText = document.getElementById("hint").innerText;
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.fillRect(12, 12, 360, 32);
+  ctx.fillStyle = "#e6edf3";
+  ctx.font = "900 14px -apple-system";
+  ctx.fillText(priceText, 22, 33);
 
-  const out=document.createElement("canvas");
-  out.width=Math.floor(rect.width*devicePixelRatio);
-  out.height=Math.floor(rect.height*devicePixelRatio);
-  const ctx=out.getContext("2d");
-  ctx.scale(devicePixelRatio,devicePixelRatio);
+  const hintW = 520;
+  const hintX = rect.width - hintW - 12;
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  ctx.fillRect(hintX, 12, hintW, 32);
+  ctx.fillStyle = "#9aa4b2";
+  ctx.font = "600 12px -apple-system";
+  ctx.fillText(hintText.slice(0, 70), hintX + 10, 33);
 
-  ctx.fillStyle="#0b0f17";
-  ctx.fillRect(0,0,rect.width,rect.height);
-
-  const priceText=document.getElementById("price").innerText||"";
-  const hintText=document.getElementById("hint").innerText||"";
-
-  ctx.fillStyle="rgba(0,0,0,0.55)";
-  ctx.strokeStyle="rgba(255,255,255,0.10)";
-  ctx.lineWidth=1;
-  ctx.fillRect(0,0,rect.width,56);
-  ctx.strokeRect(0,0,rect.width,56);
-
-  ctx.fillStyle="rgba(0,0,0,0.6)";
-  ctx.fillRect(12,12, Math.min(360, rect.width*0.42), 32);
-  ctx.strokeRect(12,12, Math.min(360, rect.width*0.42), 32);
-  ctx.fillStyle="#e6edf3";
-  ctx.font="900 14px -apple-system,Segoe UI,Roboto,Arial";
-  ctx.fillText(priceText,22,33);
-
-  const hintW=Math.min(520, rect.width*0.52);
-  const hintX=rect.width-hintW-12;
-  ctx.fillStyle="rgba(0,0,0,0.55)";
-  ctx.fillRect(hintX,12,hintW,32);
-  ctx.strokeRect(hintX,12,hintW,32);
-  ctx.fillStyle="#9aa4b2";
-  ctx.font="600 12px -apple-system,Segoe UI,Roboto,Arial";
-  const clipped=hintText.length>70?hintText.slice(0,67)+"…":hintText;
-  ctx.fillText(clipped,hintX+10,33);
-
-  canvases.forEach(c=>{
-    const r=c.getBoundingClientRect();
-    const x=r.left-rect.left;
-    const y=r.top-rect.top;
-    try{ctx.drawImage(c,x,y,r.width,r.height)}catch{}
+  canvases.forEach(c => {
+    const r = c.getBoundingClientRect();
+    ctx.drawImage(c, r.left - rect.left, r.top - rect.top);
   });
 
+  // 水印
   ctx.save();
-  ctx.globalAlpha=0.14;
-  ctx.translate(rect.width/2, rect.height/2);
-  ctx.rotate(-Math.PI/10);
-  ctx.fillStyle=ME.pro?"#00ff88":"#ff4757";
-  ctx.font="900 64px -apple-system,Segoe UI,Roboto,Arial";
-  const wm=ME.pro?"INFLECTION HUNTER PRO":"FREE VERSION";
-  ctx.fillText(wm, -ctx.measureText(wm).width/2, 0);
+  ctx.globalAlpha = 0.14;
+  ctx.translate(rect.width / 2, rect.height / 2);
+  ctx.rotate(-Math.PI / 10);
+  ctx.fillStyle = "#00ff88";
+  ctx.font = "900 64px -apple-system";
+  ctx.fillText("INFLECTION HUNTER PRO", -200, 0);
   ctx.restore();
 
-  const a=document.createElement("a");
-  const sym=document.getElementById("symbol").value;
-  const tf=document.getElementById("tf").value;
-  a.download=`inflection-hunter_${sym}_${tf}.png`;
-  a.href=out.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.download = `inflection-hunter_${document.getElementById("symbol").value}_${document.getElementById("tf").value}.png`;
+  a.href = out.toDataURL();
   a.click();
-  showToast("Exported / 已导出（图表区域）");
+  showToast("图片已导出！");
 }
 
-// -------- Email cookie bootstrap --------
-function getCookie(name){
-  return document.cookie.split("; ").find(r=>r.startsWith(name+"="))?.split("=")[1] || "";
-}
-async function ensureEmail(){
-  const emailCookie = decodeURIComponent(getCookie("ih_email")||"");
-  if(emailCookie && emailCookie.includes("@")) return true;
-  document.getElementById("emailModal").style.display="flex";
-  return false;
-}
-async function saveEmail(){
-  const email=(document.getElementById("emailInput").value||"").trim().toLowerCase();
-  if(!email.includes("@")){showToast("Invalid email / 邮箱不正确");return;}
-  const r=await api("/api/auth/set_email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});
-  if(r.ok){
-    document.getElementById("emailModal").style.display="none";
-    document.getElementById("alertEmail").value=email;
-    await refreshMe();
-    showToast("Saved / 已保存");
-  }else{
-    showToast("Failed / 失败");
-  }
-}
-
-document.getElementById("symbol").addEventListener("change", reload);
+// 启动
+document.getElementById("symbol").addEventListener("input", () => { if (event.inputType === "insertReplacementText" || event.inputType === undefined) reload(); });
 document.getElementById("tf").addEventListener("change", reload);
-
-(async function boot(){
-  document.getElementById("pinRisk").checked = localStorage.getItem("pin_risk")==="1";
-  await refreshMe();
-  await reload();
-  setInterval(refreshMe, 15000);
-})();
+reload();
 </script>
-
-<div id="toast"></div>
 </body>
 </html>
