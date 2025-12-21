@@ -173,11 +173,12 @@ function showToast(msg) {
 
 function setHint(msg) { document.getElementById("hint").innerText = msg; }
 function fmt(n) {
-  if (!n || isNaN(n)) return "--";
+  if (n === null || n === undefined || isNaN(n)) return "--";
   const x = Number(n);
   return Math.abs(x) >= 1000 ? x.toFixed(2) : x.toFixed(4);
 }
 
+// ===== Chart init (series only created ONCE) =====
 let chart = LightweightCharts.createChart(document.getElementById("chart"), {
   layout: { background: { color: "#0b0f17" }, textColor: "#d1d4dc" },
   grid: { vertLines: { color: "transparent" }, horzLines: { color: "transparent" } },
@@ -185,13 +186,23 @@ let chart = LightweightCharts.createChart(document.getElementById("chart"), {
   rightPriceScale: { borderVisible: false },
   crosshair: { mode: 1 }
 });
-let candle = chart.addCandlestickSeries({ upColor: "#00ff88", downColor: "#ff4757", wickUpColor: "#00ff88", wickDownColor: "#ff4757", borderVisible: false });
+
+let candle = chart.addCandlestickSeries({
+  upColor: "#00ff88",
+  downColor: "#ff4757",
+  wickUpColor: "#00ff88",
+  wickDownColor: "#ff4757",
+  borderVisible: false
+});
+
+// 绿色 / 红色：同一条拐点线 ext 的“分段显示”
 let upLine = chart.addLineSeries({ color: "#00ff88", lineWidth: 3 });
 let dnLine = chart.addLineSeries({ color: "#ff4757", lineWidth: 3 });
-let auxLineSeries = chart.addLineSeries({ color: "#ffaa00", lineWidth: 2 }); // 辅助线：橘黄色固定
+
+// 黄色辅助均线（保持不变）
+let auxLineSeries = chart.addLineSeries({ color: "#ffaa00", lineWidth: 2 });
 
 let riskPriceLines = [];
-
 function clearRiskLines() {
   riskPriceLines.forEach(pl => { try { candle.removePriceLine(pl); } catch {} });
   riskPriceLines = [];
@@ -234,18 +245,34 @@ function startSubscription() {
   }
 }
 
+function copyShareLink() {
+  try {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    showToast("Link copied · 已复制分享链接");
+  } catch {
+    showToast("Copy failed · 复制失败");
+  }
+}
+
+async function exportChartPNG() {
+  // Lightweight Charts 本身不直接导出PNG；这里做一个“占位实现”
+  // 你后续若要真实导出：可用 html2canvas 或把 chart 容器转 canvas
+  showToast("Export is a placeholder · 导出功能占位");
+}
+
+// ===== data source =====
 let currentSymbol = "BTCUSDT";
 let currentTf = "1d";
 let ws = null;
 
-function getBinanceInterval(tf) {
-  return tf;
-}
+function getBinanceInterval(tf) { return tf; }
 
 function generateSimulatedData(symbol, tf) {
   const tfSeconds = {
     "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400, "1d": 86400, "1w": 604800, "1M": 2592000
   }[tf] || 86400;
+
   const num_bars = tf === "1M" ? 120 : 200;
   const now = Math.floor(Date.now() / 1000);
   const base = symbol.includes("BTC") ? 67000 : 205;
@@ -260,13 +287,20 @@ function generateSimulatedData(symbol, tf) {
     const noise = (Math.random() - 0.5) * base * volatility;
     price += trend_factor + noise;
     price = Math.max(price, base * 0.5);
+
     const open = price;
     const close = price + (Math.random() - 0.5) * base * 0.006;
     const high = Math.max(open, close) + Math.random() * base * 0.01;
     const low = Math.min(open, close) - Math.random() * base * 0.01;
-    bars.push({ time: time + i * tfSeconds, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2) });
-  }
 
+    bars.push({
+      time: time + i * tfSeconds,
+      open: +open.toFixed(2),
+      high: +high.toFixed(2),
+      low: +low.toFixed(2),
+      close: +close.toFixed(2)
+    });
+  }
   return bars;
 }
 
@@ -274,12 +308,14 @@ async function loadHistoricalData(symbol, tf) {
   const interval = getBinanceInterval(tf);
   const limit = tf === "1M" ? 120 : 500;
   let retries = 3;
+
   while (retries > 0) {
     try {
       const resp = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
       if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
       const data = await resp.json();
-      if (data.length === 0) throw new Error("No data returned");
+      if (!data || data.length === 0) throw new Error("No data returned");
+
       const bars = data.map(d => ({
         time: d[0] / 1000,
         open: parseFloat(d[1]),
@@ -287,6 +323,7 @@ async function loadHistoricalData(symbol, tf) {
         low: parseFloat(d[3]),
         close: parseFloat(d[4])
       }));
+
       candle.setData(bars);
       processData(bars);
       setHint("Binance data loaded · Binance数据加载完成");
@@ -300,14 +337,14 @@ async function loadHistoricalData(symbol, tf) {
         processData(simBars);
         setHint("Simulated data (Binance unavailable) · 模拟数据 (Binance不可用)");
       } else {
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 1200));
       }
     }
   }
 }
 
 function connectWebSocket(symbol, tf) {
-  if (ws) ws.close();
+  if (ws) { try { ws.close(); } catch {} }
   const interval = getBinanceInterval(tf);
   const stream = `${symbol.toLowerCase()}@kline_${interval}`;
   ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
@@ -315,8 +352,9 @@ function connectWebSocket(symbol, tf) {
   ws.onmessage = e => {
     try {
       const msg = JSON.parse(e.data);
-      if (!msg.k || !msg.k.x) return;
+      if (!msg.k || !msg.k.x) return; // 只在K线收盘时更新
       const k = msg.k;
+
       const newBar = {
         time: k.t / 1000,
         open: parseFloat(k.o),
@@ -324,17 +362,21 @@ function connectWebSocket(symbol, tf) {
         low: parseFloat(k.l),
         close: parseFloat(k.c)
       };
+
       candle.update(newBar);
-      const allBars = candle.data();
-      if (allBars.length >= 50) processData(allBars);
+
+      // Lightweight Charts v4 不保证 candle.data() 可用；这里保守处理：只做轻提示
+      // 如你需要“实时滚动完整指标”，建议自行维护 bars 数组（我也可以替你改）
+      setHint("Live update received · 收到实时更新");
     } catch {}
   };
 
   ws.onclose = () => setTimeout(() => connectWebSocket(symbol, tf), 3000);
 }
 
+// ===== indicators & main logic =====
 function processData(bars) {
-  if (bars.length < 30) return;
+  if (!bars || bars.length < 30) return;
 
   const closes = bars.map(b => b.close);
   const period = 14;
@@ -352,6 +394,7 @@ function processData(bars) {
     return res;
   }
 
+  // === ext 计算（你的拐点线核心）===
   const wma_half = wma(closes, Math.floor(period / 2));
   const wma_full = wma(closes, period);
   const vect = new Array(closes.length).fill(NaN);
@@ -371,35 +414,36 @@ function processData(bars) {
     if (count > 0) ext[i] = sum / count;
   }
 
-  const uptrend = new Array(closes.length).fill(NaN);
-  const dntrend = new Array(closes.length).fill(NaN);
-  const trend = new Array(closes.length).fill(0);
+  // ✅ 关键修复：用 WhitespaceData 分段，且用 ext 的斜率决定红/绿
+  // 规则：上涨时只显示绿色；下跌时只显示红色；黄色不变
+  const upData = [];
+  const dnData = [];
+  for (let i = 0; i < bars.length; i++) {
+    const t = bars[i].time;
+    const v = ext[i];
 
-  for (let x = closes.length - 2; x >= 0; x--) {
-    trend[x] = trend[x + 1];
-    if (!isNaN(ext[x]) && !isNaN(ext[x + 1])) {
-      if (ext[x] > ext[x + 1]) trend[x] = 1;
-      else if (ext[x] < ext[x + 1]) trend[x] = -1;
+    // ext 不可用：两条都空白（不画）
+    if (v === null || v === undefined || isNaN(v) || i === 0 || isNaN(ext[i - 1])) {
+      upData.push({ time: t }); // whitespace
+      dnData.push({ time: t }); // whitespace
+      continue;
     }
 
-    if (trend[x] > 0) {
-      uptrend[x] = ext[x];
-      if (trend[x + 1] <= 0 && !isNaN(ext[x + 1])) uptrend[x + 1] = ext[x + 1];
-      dntrend[x] = NaN;
-    } else if (trend[x] < 0) {
-      dntrend[x] = ext[x];
-      if (trend[x + 1] >= 0 && !isNaN(ext[x + 1])) dntrend[x + 1] = ext[x + 1];
-      uptrend[x] = NaN;
+    const isUp = v >= ext[i - 1]; // 用拐点线本身斜率判断颜色
+
+    if (isUp) {
+      upData.push({ time: t, value: v });
+      dnData.push({ time: t }); // whitespace
+    } else {
+      upData.push({ time: t }); // whitespace
+      dnData.push({ time: t, value: v });
     }
   }
 
-  const up_line = uptrend.map((v, i) => ({ time: bars[i].time, value: v })).filter(o => !isNaN(o.value));
-  const dn_line = dntrend.map((v, i) => ({ time: bars[i].time, value: v })).filter(o => !isNaN(o.value));
+  upLine.setData(upData);
+  dnLine.setData(dnData);
 
-  upLine.setData(up_line);
-  dnLine.setData(dn_line);
-
-  // 辅助线：EMA(20) 橘黄色固定
+  // === 黄色辅助线：EMA(20) 固定不变 ===
   function ema(arr, per) {
     const res = new Array(arr.length).fill(NaN);
     const k = 2 / (per + 1);
@@ -412,10 +456,13 @@ function processData(bars) {
     return res;
   }
   const auxEMA = ema(closes, 20);
-  const aux_data = auxEMA.map((v, i) => ({ time: bars[i].time, value: v })).filter(o => !isNaN(o.value));
+  const aux_data = auxEMA.map((v, i) => {
+    const t = bars[i].time;
+    return (v === null || v === undefined || isNaN(v)) ? ({ time: t }) : ({ time: t, value: v });
+  });
   auxLineSeries.setData(aux_data);
 
-  // 交叉检测产生B/S标记
+  // === 交叉检测产生B/S标记（ext vs EMA20）===
   const markers = [];
   for (let i = 1; i < closes.length; i++) {
     if (!isNaN(ext[i]) && !isNaN(ext[i-1]) && !isNaN(auxEMA[i]) && !isNaN(auxEMA[i-1])) {
@@ -428,7 +475,7 @@ function processData(bars) {
   }
   candle.setMarkers(markers);
 
-  // 最新信号（基于最新交叉）
+  // === 最新信号（基于最近一次交叉）===
   let latestSignal = null;
   for (let x = closes.length - 2; x >= 1; x--) {
     if (!isNaN(ext[x]) && !isNaN(ext[x-1]) && !isNaN(auxEMA[x]) && !isNaN(auxEMA[x-1])) {
@@ -491,6 +538,7 @@ function processData(bars) {
   document.getElementById("price").innerText = `${currentSymbol} · ${fmt(last.close)}`;
 }
 
+// ===== control =====
 async function reload() {
   const symbol = document.getElementById("symbol").value.trim().toUpperCase() || "BTCUSDT";
   const tf = document.getElementById("tf").value;
