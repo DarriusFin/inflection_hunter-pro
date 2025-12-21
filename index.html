@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<title>Inflection Hunter Pro v6.3.3 (Overlay Enhanced) │ Darrius FinTech Inc</title>
+<title>Inflection Hunter Pro v6.3.3b (Overlay Enhanced) │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -100,7 +100,6 @@ button.ghost{background:#1e2533;}
       <div class="pulseWrap">
         <div id="pulseGauge" aria-hidden="true">
           <svg viewBox="0 0 120 120">
-            <!-- ring -->
             <circle class="track" cx="60" cy="60" r="46"></circle>
             <circle id="pulseProgress" class="progress" cx="60" cy="60" r="46"
               stroke-dasharray="289"
@@ -178,7 +177,6 @@ button.ghost{background:#1e2533;}
       </div>
       <div>
         <div class="inlineLabel">Period · 周期</div>
-        <!-- ✅ 改为 12 -->
         <input id="auxPeriod" type="number" min="2" max="200" value="12" />
       </div>
     </div>
@@ -244,19 +242,18 @@ function calcMarketPulse(latest){
   return { label:"Bearish · 强空", value:v, color:RED };
 }
 
-/** ✅ pulse gauge update (ring sector) */
 function updatePulseGauge(value, color){
   const circle=document.getElementById("pulseCircle");
   const prog=document.getElementById("pulseProgress");
   const radius=46;
-  const C = 2*Math.PI*radius; // ~289
-  const v = clamp(Number(value)||0, 0, 100);
-  const offset = C * (1 - v/100);
-  prog.style.stroke = color || "#9aa4b2";
-  prog.style.filter = `drop-shadow(0 0 8px ${color || "#9aa4b2"}55)`;
+  const C=2*Math.PI*radius;
+  const v=clamp(Number(value)||0,0,100);
+  const offset=C*(1-v/100);
+  prog.style.stroke=color||"#9aa4b2";
+  prog.style.filter=`drop-shadow(0 0 8px ${color||"#9aa4b2"}55)`;
   prog.setAttribute("stroke-dasharray", String(C.toFixed(0)));
   prog.setAttribute("stroke-dashoffset", String(offset));
-  circle.style.borderColor = color || "#9aa4b2";
+  circle.style.borderColor=color||"#9aa4b2";
 }
 
 /** chart init */
@@ -468,13 +465,12 @@ function connectWebSocket(symbol, tf){
         if(barsStore.length>1200) barsStore=barsStore.slice(-1200);
       }
       candle.update(bar);
-      if(k.x){ processData(barsStore); } // candle closed
+      if(k.x){ processData(barsStore); }
     }catch{}
   };
   ws.onclose=()=>setTimeout(()=>connectWebSocket(symbol, tf),3000);
 }
 
-/** indicators */
 function ema(arr, per){
   const res=new Array(arr.length).fill(NaN);
   per=Math.max(2,Math.floor(per));
@@ -505,7 +501,6 @@ function processData(bars){
 
   const closes=bars.map(b=>b.close);
 
-  // ext (your core)
   const period=14;
   const p=Math.max(2,Math.floor(Math.sqrt(period)));
   function wma(arr, per){
@@ -536,7 +531,6 @@ function processData(bars){
     if(cnt>0) ext[i]=sum/cnt;
   }
 
-  // trend by close slope
   const N=5;
   const trend=new Array(closes.length).fill(0);
   for(let i=1;i<closes.length;i++){
@@ -552,7 +546,6 @@ function processData(bars){
     else trend[i]=trend[i-1];
   }
 
-  // ✅ aux line: EMA(ext) or EMA(close), period default already 12 in UI
   const auxSource=document.getElementById("auxSource").value;
   const auxPer=clamp(parseInt(document.getElementById("auxPeriod").value||"12",10),2,200);
 
@@ -572,10 +565,8 @@ function processData(bars){
   }
   auxLineSeries.setData(auxPts);
 
-  // ATR for label placement
   const atr=calcATR(bars,14);
 
-  // overlay points
   const oPts=[];
   for(let i=0;i<bars.length;i++){
     const v=ext[i];
@@ -584,7 +575,6 @@ function processData(bars){
     oPts.push({ time: bars[i].time, value: v, trend: tr>=0?1:-1 });
   }
 
-  // pivots with cooldown
   const cooldown=8;
   const piv=[];
   function tryPushPivot(i,type){
@@ -615,16 +605,8 @@ function processData(bars){
     if(b>a && b>=c) tryPushPivot(i,"S");
   }
 
-  // markers
-  candle.setMarkers(piv.map(pv=>({
-    time:pv.time,
-    text:pv.type,
-    position:pv.type==="B"?"belowBar":"aboveBar",
-    color:pv.type==="B"?"#ff2bd6":"#ffe600",
-    shape:"circle"
-  })));
+  // ✅✅ 关键修复：不再 setMarkers，避免小字体 B/S 重复
 
-  // latest signal
   let latestSignal=null;
   if(piv.length){
     const pv=piv[piv.length-1];
@@ -637,7 +619,6 @@ function processData(bars){
     }
   }
 
-  // signals panel
   const box=document.getElementById("signals");
   box.innerHTML="";
   if(latestSignal){
@@ -652,13 +633,11 @@ function processData(bars){
     box.innerHTML="<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
   }
 
-  // pulse update
   const pulse=calcMarketPulse(latestSignal);
   document.getElementById("pulseCircle").innerText = latestSignal ? pulse.value : "--";
   document.getElementById("pulseLabel").innerText = latestSignal ? `Market Pulse · 市场情绪: ${pulse.label}` : "Loading… / 加载中…";
   updatePulseGauge(latestSignal ? pulse.value : 0, pulse.color);
 
-  // risk
   const risk=latestSignal?.risk || null;
   document.getElementById("riskEntry").innerText = risk ? fmt(risk.entry) : "--";
   document.getElementById("riskStop").innerText = risk ? fmt(risk.stop) : "--";
@@ -673,11 +652,9 @@ function processData(bars){
     risk.targets.forEach((p,i)=>addRiskLine(p,`T${i+1} · 目标${i+1}`,BLUE));
   }
 
-  // price label
   const last=bars[bars.length-1];
   document.getElementById("price").innerText = `${currentSymbol} · ${fmt(last.close)}`;
 
-  // overlay state
   overlayState.points=oPts;
   overlayState.pivots=piv.map(pv=>({ time:pv.time, type:pv.type, priceLabel:pv.priceLabel }));
 
@@ -698,10 +675,10 @@ async function reload(){
 document.getElementById("auxSource").addEventListener("change",()=>{ if(barsStore.length) processData(barsStore); });
 document.getElementById("auxPeriod").addEventListener("change",()=>{ if(barsStore.length) processData(barsStore); });
 
-// init
 resizeOverlay();
 updatePulseGauge(0, "#9aa4b2");
 reload();
 </script>
 </body>
 </html>
+
