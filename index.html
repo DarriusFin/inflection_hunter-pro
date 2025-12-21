@@ -190,12 +190,17 @@ let candle = chart.addCandlestickSeries({
   borderVisible: false
 });
 
-// 主线（按“价格涨跌”分段）：绿 / 红
-let upLine = chart.addLineSeries({ color: "#00ff88", lineWidth: 3 });
-let dnLine = chart.addLineSeries({ color: "#ff4757", lineWidth: 3 });
+// ✅ 主线只保留 ONE series：颜色整体切换（看多绿 / 看空红）
+let mainLine = chart.addLineSeries({
+  color: "#00ff88",
+  lineWidth: 3
+});
 
-// 黄色均线：EMA(20) 固定
-let auxLineSeries = chart.addLineSeries({ color: "#ffaa00", lineWidth: 2 });
+// ✅ 黄色均线：EMA(20) 固定
+let auxLineSeries = chart.addLineSeries({
+  color: "#ffaa00",
+  lineWidth: 2
+});
 
 let riskPriceLines = [];
 function clearRiskLines() {
@@ -325,7 +330,6 @@ function connectWebSocket(symbol, tf) {
   const stream = `${symbol.toLowerCase()}@kline_${interval}`;
   ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
 
-  // 这里保留你原来逻辑：只在K线收盘时更新 candle
   ws.onmessage = e => {
     try {
       const msg = JSON.parse(e.data);
@@ -341,9 +345,7 @@ function connectWebSocket(symbol, tf) {
         close: parseFloat(k.c)
       };
       candle.update(newBar);
-
-      // 重要说明：要“实时重算指标”，需要你自己维护 bars 数组。
-      // 目前保持和你原版一致：历史加载时算一次。
+      // 如果你想“实时重算主线/EMA/信号”，需要维护 bars 数组，我可以再给你做
     } catch {}
   };
 
@@ -388,6 +390,13 @@ function processData(bars) {
     if (count > 0) ext[i] = sum / count;
   }
 
+  // ✅ 主线只画一根（ext），前段 NaN 用 whitespace 断开
+  const mainData = bars.map((b, i) => {
+    const v = ext[i];
+    return isNaN(v) ? { time: b.time } : { time: b.time, value: v };
+  });
+  mainLine.setData(mainData);
+
   // ===== 黄色 EMA20 固定 =====
   function ema(arr, per) {
     const res = new Array(arr.length).fill(NaN);
@@ -404,38 +413,7 @@ function processData(bars) {
   const aux_data = auxEMA.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v }));
   auxLineSeries.setData(aux_data);
 
-  // ✅✅ 关键修复：主线绿/红由“价格涨跌”决定（不是 ext 斜率）
-  // 规则：close 上行 -> 绿线显示；close 下行 -> 红线显示；另一条用 whitespace 断开
-  const upData = [];
-  const dnData = [];
-
-  for (let i = 0; i < bars.length; i++) {
-    const t = bars[i].time;
-    const v = ext[i];
-
-    // ext 还没算出来：两条都空白
-    if (isNaN(v) || i === 0) {
-      upData.push({ time: t });
-      dnData.push({ time: t });
-      continue;
-    }
-
-    // 价格方向（你要的“上涨/下跌”）
-    const isPriceUp = bars[i].close >= bars[i - 1].close;
-
-    if (isPriceUp) {
-      upData.push({ time: t, value: v });
-      dnData.push({ time: t });
-    } else {
-      upData.push({ time: t });
-      dnData.push({ time: t, value: v });
-    }
-  }
-
-  upLine.setData(upData);
-  dnLine.setData(dnData);
-
-  // === B/S 标记：仍按 ext vs EMA20 交叉（保持你原逻辑）===
+  // === 交叉检测产生B/S标记 ===
   const markers = [];
   for (let i = 1; i < closes.length; i++) {
     if (!isNaN(ext[i]) && !isNaN(ext[i-1]) && !isNaN(auxEMA[i]) && !isNaN(auxEMA[i-1])) {
@@ -448,7 +426,7 @@ function processData(bars) {
   }
   candle.setMarkers(markers);
 
-  // === 最新信号（保持你原版）===
+  // === 最新信号（基于最近一次交叉）===
   let latestSignal = null;
   for (let x = closes.length - 2; x >= 1; x--) {
     if (!isNaN(ext[x]) && !isNaN(ext[x-1]) && !isNaN(auxEMA[x]) && !isNaN(auxEMA[x-1])) {
@@ -474,6 +452,22 @@ function processData(bars) {
     }
   }
 
+  // ✅ 关键：根据“最新信号”整体切换主线颜色（满足你：主线只有一根）
+  // 若无信号，则用 ext 最近斜率做兜底
+  let bias = null; // "B" or "S"
+  if (latestSignal) bias = latestSignal.side;
+  else {
+    // fallback: ext 斜率
+    const n = ext.length - 1;
+    for (let i = n; i >= 1; i--) {
+      if (!isNaN(ext[i]) && !isNaN(ext[i-1])) { bias = (ext[i] >= ext[i-1]) ? "B" : "S"; break; }
+    }
+  }
+  const GREEN = "#00ff88";
+  const RED   = "#ff4757";
+  mainLine.applyOptions({ color: bias === "S" ? RED : GREEN });
+
+  // === 左侧信号卡片：BUY 绿 / SELL 红（你要求“多空表达颜色改变”）===
   const box = document.getElementById("signals");
   box.innerHTML = "";
   if (latestSignal) {
