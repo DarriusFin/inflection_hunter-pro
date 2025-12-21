@@ -18,14 +18,23 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 #topRight{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:1;min-width:0;}
 #status{padding:7px 12px;border-radius:999px;font-size:12px;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;white-space:nowrap;}
 #copyright{font-size:12px;color:#fff;opacity:0.85;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);padding:6px 12px;border-radius:999px;white-space:nowrap;max-width:38vw;overflow:hidden;text-overflow:ellipsis;}
+
 #main{display:grid;grid-template-columns:320px 1fr 360px;height:calc(100vh - 64px);}
 .panel{background:var(--panel);border-right:1px solid var(--border);padding:16px;overflow:auto;}
 .panel:last-child{border-right:none;}
 .panel h3{margin:0 0 12px;font-size:14px;color:var(--green);display:flex;align-items:center;gap:8px;}
 .panel h3::before{content:"◆";font-size:11px;opacity:.9}
-#pulse{display:flex;align-items:center;justify-content:center;height:160px;}
-#pulseCircle{width:122px;height:122px;border-radius:50%;border:10px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;background:rgba(0,0,0,.25);}
+
+#pulse{display:flex;align-items:center;justify-content:center;height:180px;}
+.pulseWrap{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center;}
+#pulseCircle{position:absolute;inset:14px;border-radius:50%;border:10px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;background:rgba(0,0,0,.25);z-index:3;}
+#pulseGauge{position:absolute;inset:0;z-index:2;}
+#pulseGauge svg{width:150px;height:150px;display:block;}
+#pulseGauge .track{stroke:rgba(255,255,255,.10);stroke-width:10;fill:none;}
+#pulseGauge .progress{stroke:var(--green);stroke-width:10;fill:none;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(0,255,136,.35));}
+
 #pulseLabel{text-align:center;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.4;}
+
 .box{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel2);}
 .kv{display:flex;justify-content:space-between;gap:10px;margin:6px 0;font-size:13px}
 .kv .k{color:var(--muted)} .kv .v{font-weight:900}
@@ -54,7 +63,6 @@ button.ghost{background:#1e2533;}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;font-size:13px;color:#fff;z-index:99999;display:none;max-width:92vw;}
 
 #signals{max-height:300px;overflow-y:auto;}
-
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
 .inlineLabel{font-size:12px;color:var(--muted);margin-top:8px;}
 .mini{font-size:12px;color:var(--muted);}
@@ -87,7 +95,22 @@ button.ghost{background:#1e2533;}
 <div id="main">
   <div class="panel">
     <h3>Market Pulse · 市场情绪</h3>
-    <div id="pulse"><div id="pulseCircle">--</div></div>
+
+    <div id="pulse">
+      <div class="pulseWrap">
+        <div id="pulseGauge" aria-hidden="true">
+          <svg viewBox="0 0 120 120">
+            <!-- ring -->
+            <circle class="track" cx="60" cy="60" r="46"></circle>
+            <circle id="pulseProgress" class="progress" cx="60" cy="60" r="46"
+              stroke-dasharray="289"
+              stroke-dashoffset="289"
+              transform="rotate(-90 60 60)"></circle>
+          </svg>
+        </div>
+        <div id="pulseCircle">--</div>
+      </div>
+    </div>
     <div id="pulseLabel">Loading… / 加载中…</div>
 
     <div class="hr"></div>
@@ -155,10 +178,11 @@ button.ghost{background:#1e2533;}
       </div>
       <div>
         <div class="inlineLabel">Period · 周期</div>
-        <input id="auxPeriod" type="number" min="2" max="200" value="20" />
+        <!-- ✅ 改为 12 -->
+        <input id="auxPeriod" type="number" min="2" max="200" value="12" />
       </div>
     </div>
-    <div class="mini">说明：你觉得黄线离拐点远，多半是因为你用的是 EMA(close)。改为 EMA(ext) 后会自然贴近 B/S。</div>
+    <div class="mini">说明：Period=12 + EMA(ext) 会明显靠近 B/S 拐点。</div>
 
     <div class="hr"></div>
 
@@ -193,9 +217,6 @@ button.ghost{background:#1e2533;}
 <div id="toast"></div>
 
 <script>
-/** =======================
- * constants & helpers
- * ======================= */
 const GREEN="#00ff88", RED="#ff4757", BLUE="#00d4ff", ORANGE="#ffaa00";
 let toastTimer=null;
 
@@ -211,7 +232,7 @@ function fmt(n){
   const x=Number(n);
   return Math.abs(x)>=1000 ? x.toFixed(2) : x.toFixed(4);
 }
-function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+function clamp(n,a,b){ return Math.max(a,Math.min(b,n)); }
 
 function calcMarketPulse(latest){
   if(!latest) return { label:"Neutral · 中性", value:50, color:"#9aa4b2" };
@@ -223,140 +244,119 @@ function calcMarketPulse(latest){
   return { label:"Bearish · 强空", value:v, color:RED };
 }
 
-/** =======================
- * chart init
- * ======================= */
-const chartEl = document.getElementById("chart");
-let chart = LightweightCharts.createChart(chartEl, {
+/** ✅ pulse gauge update (ring sector) */
+function updatePulseGauge(value, color){
+  const circle=document.getElementById("pulseCircle");
+  const prog=document.getElementById("pulseProgress");
+  const radius=46;
+  const C = 2*Math.PI*radius; // ~289
+  const v = clamp(Number(value)||0, 0, 100);
+  const offset = C * (1 - v/100);
+  prog.style.stroke = color || "#9aa4b2";
+  prog.style.filter = `drop-shadow(0 0 8px ${color || "#9aa4b2"}55)`;
+  prog.setAttribute("stroke-dasharray", String(C.toFixed(0)));
+  prog.setAttribute("stroke-dashoffset", String(offset));
+  circle.style.borderColor = color || "#9aa4b2";
+}
+
+/** chart init */
+const chartEl=document.getElementById("chart");
+let chart=LightweightCharts.createChart(chartEl,{
   layout:{ background:{ color:"#0b0f17" }, textColor:"#d1d4dc" },
   grid:{ vertLines:{ color:"transparent" }, horzLines:{ color:"transparent" } },
   timeScale:{ timeVisible:true, secondsVisible:false },
   rightPriceScale:{ borderVisible:false },
   crosshair:{ mode:1 }
 });
-
-let candle = chart.addCandlestickSeries({
+let candle=chart.addCandlestickSeries({
   upColor:GREEN, downColor:RED,
   wickUpColor:GREEN, wickDownColor:RED,
   borderVisible:false
 });
+let auxLineSeries=chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
 
-// ✅ 只保留黄线（EMA）；主线为 overlay 真正一根线按趋势红绿
-let auxLineSeries = chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
-
-// risk lines
 let riskPriceLines=[];
-function clearRiskLines(){
-  riskPriceLines.forEach(pl=>{ try{ candle.removePriceLine(pl);}catch{} });
-  riskPriceLines=[];
-}
+function clearRiskLines(){ riskPriceLines.forEach(pl=>{ try{ candle.removePriceLine(pl);}catch{} }); riskPriceLines=[]; }
 function addRiskLine(price,title,color){
   if(isNaN(price)) return;
   const pl=candle.createPriceLine({ price, color, lineWidth:2, lineStyle:2, axisLabelVisible:true, title });
   riskPriceLines.push(pl);
 }
 
-/** =======================
- * overlay engine
- * ======================= */
-const overlay = document.getElementById("overlay");
-const ctx = overlay.getContext("2d");
-
-let overlayState = {
-  points: [],   // [{time, value, trend}]
-  pivots: []    // [{time, priceLabel, type:'B'|'S'}]
-};
+/** overlay engine */
+const overlay=document.getElementById("overlay");
+const ctx=overlay.getContext("2d");
+let overlayState={ points:[], pivots:[] };
 
 function resizeOverlay(){
-  const dpr = window.devicePixelRatio || 1;
-  const rect = chartEl.getBoundingClientRect();
-  overlay.width = Math.max(1, Math.floor(rect.width * dpr));
-  overlay.height = Math.max(1, Math.floor(rect.height * dpr));
-  overlay.style.width = rect.width + "px";
-  overlay.style.height = rect.height + "px";
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const dpr=window.devicePixelRatio||1;
+  const rect=chartEl.getBoundingClientRect();
+  overlay.width=Math.max(1,Math.floor(rect.width*dpr));
+  overlay.height=Math.max(1,Math.floor(rect.height*dpr));
+  overlay.style.width=rect.width+"px";
+  overlay.style.height=rect.height+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
   redrawOverlay();
 }
-
 function clearCanvas(){
-  const rect = overlay.getBoundingClientRect();
-  ctx.clearRect(0, 0, rect.width, rect.height);
+  const rect=overlay.getBoundingClientRect();
+  ctx.clearRect(0,0,rect.width,rect.height);
 }
-
-// Convert time/price -> pixel
 function xOfTime(t){ return chart.timeScale().timeToCoordinate(t); }
 function yOfPrice(p){ return candle.priceToCoordinate(p); }
 
 function drawColoredMainLine(){
-  const pts = overlayState.points;
-  if(!pts || pts.length < 2) return;
-
-  ctx.lineWidth = 3;
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-
+  const pts=overlayState.points;
+  if(!pts || pts.length<2) return;
+  ctx.lineWidth=3; ctx.lineJoin="round"; ctx.lineCap="round";
   for(let i=1;i<pts.length;i++){
-    const a = pts[i-1];
-    const b = pts[i];
-    const x1 = xOfTime(a.time), y1 = yOfPrice(a.value);
-    const x2 = xOfTime(b.time), y2 = yOfPrice(b.value);
+    const a=pts[i-1], b=pts[i];
+    const x1=xOfTime(a.time), y1=yOfPrice(a.value);
+    const x2=xOfTime(b.time), y2=yOfPrice(b.value);
     if(x1===null||y1===null||x2===null||y2===null) continue;
-
-    ctx.strokeStyle = (b.trend >= 0) ? GREEN : RED;
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
+    ctx.strokeStyle=(b.trend>=0)?GREEN:RED;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   }
 }
-
 function drawPivotsBig(){
-  const piv = overlayState.pivots || [];
+  const piv=overlayState.pivots||[];
   if(!piv.length) return;
 
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = "bold 22px Arial";         // ✅ 更大更亮眼
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.font="bold 22px Arial";
 
   for(const m of piv){
-    const x = xOfTime(m.time);
-    const y = yOfPrice(m.priceLabel);   // ✅ 用 ATR 偏移后的“价格位置”
-    if(x===null || y===null) continue;
+    const x=xOfTime(m.time);
+    const y=yOfPrice(m.priceLabel);
+    if(x===null||y===null) continue;
 
-    const isB = m.type === "B";
-    const fill = isB ? "#ff2bd6" : "#ffe600";
-    const stroke = "rgba(0,0,0,0.75)";
+    const isB=m.type==="B";
+    const fill=isB?"#ff2bd6":"#ffe600";
+    const stroke="rgba(0,0,0,0.75)";
 
     ctx.save();
-    ctx.shadowColor = fill;
-    ctx.shadowBlur = 14;
-    ctx.fillStyle = fill;
+    ctx.shadowColor=fill;
+    ctx.shadowBlur=14;
+    ctx.fillStyle=fill;
 
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = stroke;
-    ctx.strokeText(m.type, x, y);
-    ctx.fillText(m.type, x, y);
+    ctx.lineWidth=5;
+    ctx.strokeStyle=stroke;
+    ctx.strokeText(m.type,x,y);
+    ctx.fillText(m.type,x,y);
     ctx.restore();
   }
 }
-
 function redrawOverlay(){
   clearCanvas();
   drawColoredMainLine();
   drawPivotsBig();
 }
+chart.timeScale().subscribeVisibleTimeRangeChange(()=>redrawOverlay());
+chart.timeScale().subscribeVisibleLogicalRangeChange(()=>redrawOverlay());
+new ResizeObserver(()=>resizeOverlay()).observe(chartEl);
+window.addEventListener("resize",()=>resizeOverlay());
 
-// re-render on zoom/pan
-chart.timeScale().subscribeVisibleTimeRangeChange(() => redrawOverlay());
-chart.timeScale().subscribeVisibleLogicalRangeChange(() => redrawOverlay());
-
-// resize observer
-new ResizeObserver(() => resizeOverlay()).observe(chartEl);
-window.addEventListener("resize", () => resizeOverlay());
-
-/** =======================
- * data store & sources
- * ======================= */
+/** data store */
 let barsStore=[];
 let currentSymbol="BTCUSDT";
 let currentTf="1d";
@@ -376,25 +376,18 @@ function copyShareLink(){
   try{ navigator.clipboard.writeText(window.location.href); showToast("Link copied · 已复制分享链接"); }
   catch{ showToast("Copy failed · 复制失败"); }
 }
-
-/** ✅ 3) 导出 PNG：把 chart 截图 + overlay 合成 */
 function exportChartPNG(){
   try{
-    const base = chart.takeScreenshot(); // canvas
-    const out = document.createElement("canvas");
-    out.width = base.width;
-    out.height = base.height;
-    const octx = out.getContext("2d");
-
-    octx.drawImage(base, 0, 0);
-
-    // overlay 可能有不同 dpr，按输出尺寸拉伸叠加
-    octx.drawImage(overlay, 0, 0, out.width, out.height);
-
-    const a = document.createElement("a");
-    const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
-    a.download = `${currentSymbol}_${currentTf}_InflectionHunter_${ts}.png`;
-    a.href = out.toDataURL("image/png");
+    const base=chart.takeScreenshot();
+    const out=document.createElement("canvas");
+    out.width=base.width; out.height=base.height;
+    const octx=out.getContext("2d");
+    octx.drawImage(base,0,0);
+    octx.drawImage(overlay,0,0,out.width,out.height);
+    const a=document.createElement("a");
+    const ts=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
+    a.download=`${currentSymbol}_${currentTf}_InflectionHunter_${ts}.png`;
+    a.href=out.toDataURL("image/png");
     a.click();
     showToast("PNG exported · 已导出（含Overlay）");
   }catch(e){
@@ -410,7 +403,6 @@ function generateSimulatedData(symbol, tf){
   const now=Math.floor(Date.now()/1000);
   const base=symbol.includes("BTC")?67000:205;
   const vol=symbol.includes("BTC")?0.025:0.012;
-
   const bars=[];
   let price=base;
   let t=now-(num-1)*tfSeconds;
@@ -418,12 +410,10 @@ function generateSimulatedData(symbol, tf){
     const trend=Math.sin(i/18)*base*0.012;
     const noise=(Math.random()-0.5)*base*vol;
     price+=trend+noise; price=Math.max(price, base*0.5);
-
     const open=price;
     const close=price+(Math.random()-0.5)*base*0.006;
     const high=Math.max(open,close)+Math.random()*base*0.01;
     const low=Math.min(open,close)-Math.random()*base*0.01;
-
     bars.push({ time:t+i*tfSeconds, open:+open.toFixed(2), high:+high.toFixed(2), low:+low.toFixed(2), close:+close.toFixed(2) });
   }
   return bars;
@@ -433,19 +423,13 @@ async function loadHistoricalData(symbol, tf){
   const interval=getBinanceInterval(tf);
   const limit=tf==="1M"?120:500;
   let retries=3;
-
   while(retries>0){
     try{
       const resp=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
       if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data=await resp.json();
       if(!data||data.length===0) throw new Error("No data");
-
-      const bars=data.map(d=>({
-        time:d[0]/1000,
-        open:+d[1], high:+d[2], low:+d[3], close:+d[4]
-      }));
-
+      const bars=data.map(d=>({ time:d[0]/1000, open:+d[1], high:+d[2], low:+d[3], close:+d[4] }));
       barsStore=bars;
       candle.setData(barsStore);
       processData(barsStore);
@@ -471,42 +455,29 @@ function connectWebSocket(symbol, tf){
   const interval=getBinanceInterval(tf);
   const stream=`${symbol.toLowerCase()}@kline_${interval}`;
   ws=new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
-
   ws.onmessage=e=>{
     try{
       const msg=JSON.parse(e.data);
       if(!msg.k) return;
       const k=msg.k;
       const bar={ time:k.t/1000, open:+k.o, high:+k.h, low:+k.l, close:+k.c };
-
       const last=barsStore[barsStore.length-1];
       if(last && last.time===bar.time) barsStore[barsStore.length-1]=bar;
       else{
         barsStore.push(bar);
         if(barsStore.length>1200) barsStore=barsStore.slice(-1200);
       }
-
       candle.update(bar);
-
-      if(k.x){ // only on candle close
-        processData(barsStore);
-      }
+      if(k.x){ processData(barsStore); } // candle closed
     }catch{}
   };
   ws.onclose=()=>setTimeout(()=>connectWebSocket(symbol, tf),3000);
 }
 
-/** =======================
- * indicator core
- * - 主线：overlay 真正一根线按趋势分段变色
- * - 趋势：close 斜率
- * - B/S：MT 拐点规则（local min/max on ext）
- * - 1) 去重：cooldown + 同类信号取更极端者
- * - 2) 位置：用 ATR 偏移到 high/low 上下
- * ======================= */
+/** indicators */
 function ema(arr, per){
   const res=new Array(arr.length).fill(NaN);
-  per=Math.max(2, Math.floor(per));
+  per=Math.max(2,Math.floor(per));
   const k=2/(per+1);
   let sum=0;
   for(let i=0;i<per && i<arr.length;i++) sum+=arr[i];
@@ -517,10 +488,9 @@ function ema(arr, per){
   }
   return res;
 }
-
 function calcATR(bars, per){
-  per=Math.max(2, Math.floor(per));
-  const tr = new Array(bars.length).fill(NaN);
+  per=Math.max(2,Math.floor(per));
+  const tr=new Array(bars.length).fill(NaN);
   for(let i=0;i<bars.length;i++){
     const h=bars[i].high, l=bars[i].low;
     if(i===0){ tr[i]=h-l; continue; }
@@ -535,12 +505,11 @@ function processData(bars){
 
   const closes=bars.map(b=>b.close);
 
-  // ext (WMA smoothing) — keep as your core signal
+  // ext (your core)
   const period=14;
-  const p=Math.max(2, Math.floor(Math.sqrt(period)));
-
+  const p=Math.max(2,Math.floor(Math.sqrt(period)));
   function wma(arr, per){
-    per=Math.max(2, Math.floor(per));
+    per=Math.max(2,Math.floor(per));
     const res=new Array(arr.length).fill(NaN);
     const weights=Array.from({length:per},(_,i)=>i+1);
     const wsum=weights.reduce((a,b)=>a+b,0);
@@ -551,15 +520,12 @@ function processData(bars){
     }
     return res;
   }
-
-  const wma_half=wma(closes, Math.max(2, Math.floor(period/2)));
-  const wma_full=wma(closes, period);
-
+  const wma_half=wma(closes,Math.max(2,Math.floor(period/2)));
+  const wma_full=wma(closes,period);
   const vect=new Array(closes.length).fill(NaN);
   for(let i=0;i<closes.length;i++){
     if(!isNaN(wma_half[i]) && !isNaN(wma_full[i])) vect[i]=2*wma_half[i]-wma_full[i];
   }
-
   const ext=new Array(closes.length).fill(NaN);
   for(let i=p-1;i<closes.length;i++){
     let sum=0,cnt=0;
@@ -570,11 +536,11 @@ function processData(bars){
     if(cnt>0) ext[i]=sum/cnt;
   }
 
-  // trend by CLOSE slope (your requirement)
+  // trend by close slope
   const N=5;
   const trend=new Array(closes.length).fill(0);
   for(let i=1;i<closes.length;i++){
-    let delta=0, found=0;
+    let delta=0,found=0;
     for(let k=i;k>=1 && found<N;k--){
       const a=closes[k], b=closes[k-1];
       if(isNaN(a)||isNaN(b)) continue;
@@ -586,17 +552,18 @@ function processData(bars){
     else trend[i]=trend[i-1];
   }
 
-  // ✅ Aux line (yellow): default EMA(ext) to be closer to pivots
-  const auxSource = document.getElementById("auxSource").value;
-  const auxPer = clamp(parseInt(document.getElementById("auxPeriod").value || "20", 10), 2, 200);
+  // ✅ aux line: EMA(ext) or EMA(close), period default already 12 in UI
+  const auxSource=document.getElementById("auxSource").value;
+  const auxPer=clamp(parseInt(document.getElementById("auxPeriod").value||"12",10),2,200);
 
-  const baseArr = (auxSource === "ext") ? ext : closes;
-  const aux = ema(baseArr.map(v => (isNaN(v) ? 0 : v)), auxPer);
+  const baseArr=(auxSource==="ext")?ext:closes;
+  const safeBase=baseArr.map(v=>isNaN(v)?0:v);
+  const aux=ema(safeBase, auxPer);
+
   const auxPts=[];
   for(let i=0;i<bars.length;i++){
     const v=aux[i];
-    // if source ext, skip early NaN zones more strictly
-    if(auxSource === "ext"){
+    if(auxSource==="ext"){
       if(isNaN(ext[i]) || isNaN(v)) continue;
     }else{
       if(isNaN(v)) continue;
@@ -605,85 +572,59 @@ function processData(bars){
   }
   auxLineSeries.setData(auxPts);
 
-  // ATR for pivot label placement
-  const atr = calcATR(bars, 14);
+  // ATR for label placement
+  const atr=calcATR(bars,14);
 
-  // overlay points (main line)
+  // overlay points
   const oPts=[];
   for(let i=0;i<bars.length;i++){
     const v=ext[i];
     if(isNaN(v)) continue;
-    const tr = (trend[i]===0 ? (i>0?trend[i-1]:1) : trend[i]);
-    oPts.push({ time: bars[i].time, value: v, trend: tr>=0 ? 1 : -1 });
+    const tr=(trend[i]===0?(i>0?trend[i-1]:1):trend[i]);
+    oPts.push({ time: bars[i].time, value: v, trend: tr>=0?1:-1 });
   }
 
-  // ==========
-  // 1) 去重 B/S：cooldown + 同类取更极端
-  // ==========
-  const cooldown = 8; // 8根K内同类不重复（你可以调 6~12）
+  // pivots with cooldown
+  const cooldown=8;
   const piv=[];
-
-  function tryPushPivot(i, type){
-    const bExt = ext[i];
+  function tryPushPivot(i,type){
+    const bExt=ext[i];
     if(isNaN(bExt)) return;
+    const last=piv[piv.length-1];
 
-    const last = piv[piv.length-1];
+    const a=atr[i];
+    const atrv=(!isNaN(a)&&a>0)?a:(bars[i].high-bars[i].low);
+    const pad=atrv*0.35;
 
-    // compute label price by ATR + high/low offsets
-    const a = atr[i];
-    const atrv = (!isNaN(a) && a>0) ? a : (bars[i].high - bars[i].low);
-    const pad = atrv * 0.35;  // ✅ 2) ATR 偏移（更专业更清楚）
+    const priceLabel = (type==="B") ? (bars[i].low - pad) : (bars[i].high + pad);
+    const cand={ time:bars[i].time, type, idx:i, extVal:bExt, priceLabel };
 
-    const priceLabel = (type==="B")
-      ? (bars[i].low - pad)
-      : (bars[i].high + pad);
-
-    const candidate = { time: bars[i].time, type, idx:i, extVal:bExt, priceLabel };
-
-    if(!last){
-      piv.push(candidate);
+    if(!last){ piv.push(cand); return; }
+    if(last.type===type && (cand.idx-last.idx)<=cooldown){
+      const better = (type==="B") ? (cand.extVal < last.extVal) : (cand.extVal > last.extVal);
+      if(better) piv[piv.length-1]=cand;
       return;
     }
-
-    // same type within cooldown: keep the more extreme (B=lower, S=higher)
-    if(last.type === type && (candidate.idx - last.idx) <= cooldown){
-      const better = (type==="B") ? (candidate.extVal < last.extVal) : (candidate.extVal > last.extVal);
-      if(better){
-        piv[piv.length-1] = candidate; // replace
-      }
-      return;
-    }
-
-    // optional: enforce alternation? (commented; keep flexible)
-    // if(last.type === type) return;
-
-    piv.push(candidate);
+    piv.push(cand);
   }
 
-  // MT pivot rule on ext: local min/max
   for(let i=2;i<bars.length-2;i++){
     const a=ext[i-1], b=ext[i], c=ext[i+1];
     if(isNaN(a)||isNaN(b)||isNaN(c)) continue;
-
-    if(b < a && b <= c){
-      tryPushPivot(i, "B");
-    }
-    if(b > a && b >= c){
-      tryPushPivot(i, "S");
-    }
+    if(b<a && b<=c) tryPushPivot(i,"B");
+    if(b>a && b>=c) tryPushPivot(i,"S");
   }
 
-  // keep native markers too (optional but nice)
-  const markers = piv.map(pv => ({
-    time: pv.time,
-    text: pv.type,
-    position: pv.type==="B" ? "belowBar" : "aboveBar",
-    color: pv.type==="B" ? "#ff2bd6" : "#ffe600",
-    shape: "circle"
-  }));
-  candle.setMarkers(markers);
+  // markers
+  candle.setMarkers(piv.map(pv=>({
+    time:pv.time,
+    text:pv.type,
+    position:pv.type==="B"?"belowBar":"aboveBar",
+    color:pv.type==="B"?"#ff2bd6":"#ffe600",
+    shape:"circle"
+  })));
 
-  // latest signal: last pivot
+  // latest signal
   let latestSignal=null;
   if(piv.length){
     const pv=piv[piv.length-1];
@@ -696,7 +637,7 @@ function processData(bars){
     }
   }
 
-  // update left panel
+  // signals panel
   const box=document.getElementById("signals");
   box.innerHTML="";
   if(latestSignal){
@@ -711,11 +652,11 @@ function processData(bars){
     box.innerHTML="<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
   }
 
-  // pulse
+  // pulse update
   const pulse=calcMarketPulse(latestSignal);
   document.getElementById("pulseCircle").innerText = latestSignal ? pulse.value : "--";
-  document.getElementById("pulseCircle").style.borderColor = pulse.color;
   document.getElementById("pulseLabel").innerText = latestSignal ? `Market Pulse · 市场情绪: ${pulse.label}` : "Loading… / 加载中…";
+  updatePulseGauge(latestSignal ? pulse.value : 0, pulse.color);
 
   // risk
   const risk=latestSignal?.risk || null;
@@ -727,21 +668,20 @@ function processData(bars){
 
   clearRiskLines();
   if(risk){
-    addRiskLine(risk.entry, "Entry · 入场", GREEN);
-    addRiskLine(risk.stop, "Stop · 止损", RED);
-    risk.targets.forEach((p,i)=>addRiskLine(p, `T${i+1} · 目标${i+1}`, BLUE));
+    addRiskLine(risk.entry,"Entry · 入场",GREEN);
+    addRiskLine(risk.stop,"Stop · 止损",RED);
+    risk.targets.forEach((p,i)=>addRiskLine(p,`T${i+1} · 目标${i+1}`,BLUE));
   }
 
-  // top price label
+  // price label
   const last=bars[bars.length-1];
   document.getElementById("price").innerText = `${currentSymbol} · ${fmt(last.close)}`;
 
-  // ✅ set overlay state and redraw
-  overlayState.points = oPts;
-  overlayState.pivots = piv.map(pv => ({ time: pv.time, type: pv.type, priceLabel: pv.priceLabel }));
+  // overlay state
+  overlayState.points=oPts;
+  overlayState.pivots=piv.map(pv=>({ time:pv.time, type:pv.type, priceLabel:pv.priceLabel }));
 
-  // ensure overlay size matches chart and draw
-  requestAnimationFrame(() => resizeOverlay());
+  requestAnimationFrame(()=>resizeOverlay());
 }
 
 async function reload(){
@@ -749,20 +689,18 @@ async function reload(){
   const tf=document.getElementById("tf").value;
   currentSymbol=symbol;
   currentTf=tf;
-
   document.getElementById("signals").innerHTML="Connecting to Binance... / 连接Binance中...";
   setHint("Loading Binance data · 加载Binance数据中...");
-
   await loadHistoricalData(symbol, tf);
   connectWebSocket(symbol, tf);
 }
 
-// ✅ 当你修改黄线参数时，直接重算（不需要重新拉数据）
-document.getElementById("auxSource").addEventListener("change", () => { if(barsStore.length) processData(barsStore); });
-document.getElementById("auxPeriod").addEventListener("change", () => { if(barsStore.length) processData(barsStore); });
+document.getElementById("auxSource").addEventListener("change",()=>{ if(barsStore.length) processData(barsStore); });
+document.getElementById("auxPeriod").addEventListener("change",()=>{ if(barsStore.length) processData(barsStore); });
 
 // init
 resizeOverlay();
+updatePulseGauge(0, "#9aa4b2");
 reload();
 </script>
 </body>
