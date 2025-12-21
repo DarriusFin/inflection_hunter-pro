@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<title>Inflection Hunter Pro v6.3.2 │ Darrius FinTech Inc</title>
+<title>Inflection Hunter Pro v6.3.2 (Overlay) │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -35,7 +35,13 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 #chartTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;z-index:10;}
 #price{background:rgba(0,0,0,.6);padding:8px 12px;border-radius:12px;font-weight:900;border:1px solid rgba(255,255,255,0.10);}
 #hint{background:rgba(0,0,0,.55);padding:8px 12px;border-radius:12px;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.10);max-width:56%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-#chart{flex:1;width:100%;}
+#chart{position:relative;flex:1;width:100%;}
+/* ✅ overlay canvas */
+#overlay{
+  position:absolute; inset:0;
+  pointer-events:none;
+  z-index:9;
+}
 input,select,button{width:100%;margin:6px 0;padding:10px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;}
 button{cursor:pointer;font-weight:900;}
 button.primary{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;padding:16px;font-size:16px;}
@@ -100,7 +106,9 @@ button.ghost{background:#1e2533;}
         <div id="price">--</div>
         <div id="hint">Connecting to Binance · 连接Binance中</div>
       </div>
-      <div id="chart"></div>
+      <div id="chart">
+        <canvas id="overlay"></canvas>
+      </div>
     </div>
   </div>
 
@@ -176,27 +184,21 @@ function fmt(n){
   return Math.abs(x)>=1000 ? x.toFixed(2) : x.toFixed(4);
 }
 
-// ✅ sort + dedup: 保证 setData 不黑屏
-function normalizePoints(pts){
-  pts.sort((a,b)=>a.time-b.time);
-  const out=[];
-  let lastT=null;
-  for(const p of pts){
-    if(!p || p.value===null || p.value===undefined || isNaN(p.value)) continue;
-    if(lastT===p.time){
-      out[out.length-1]=p; // 覆盖同time
-    }else{
-      out.push(p);
-      lastT=p.time;
-    }
-  }
-  return out;
+function calcMarketPulse(latest){
+  if(!latest) return { label:"Neutral · 中性", value:50, color:"#9aa4b2" };
+  const dir=latest.side==="B"?1:-1;
+  const v=Math.round(50 + dir*latest.confidence*40);
+  if(v>75) return { label:"Bullish · 强多", value:v, color:GREEN };
+  if(v>55) return { label:"Mild Bull · 偏多", value:v, color:"#7dffb6" };
+  if(v>45) return { label:"Neutral · 中性", value:v, color:"#9aa4b2" };
+  return { label:"Bearish · 强空", value:v, color:RED };
 }
 
 /** =======================
  * chart init
  * ======================= */
-let chart = LightweightCharts.createChart(document.getElementById("chart"), {
+const chartEl = document.getElementById("chart");
+let chart = LightweightCharts.createChart(chartEl, {
   layout:{ background:{ color:"#0b0f17" }, textColor:"#d1d4dc" },
   grid:{ vertLines:{ color:"transparent" }, horzLines:{ color:"transparent" } },
   timeScale:{ timeVisible:true, secondsVisible:false },
@@ -210,11 +212,7 @@ let candle = chart.addCandlestickSeries({
   borderVisible:false
 });
 
-// ✅ 主线两条（绿/红）互斥显示 = MT 的 Uptrend/Dntrend
-let mainUp = chart.addLineSeries({ color: GREEN, lineWidth: 3 });
-let mainDn = chart.addLineSeries({ color: RED,   lineWidth: 3 });
-
-// ✅ 辅助线：EMA20 黄色
+// ✅ 只保留黄线（EMA20）；主线改为 overlay（真正一根线变色）
 let auxLineSeries = chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
 
 // risk lines
@@ -230,26 +228,127 @@ function addRiskLine(price,title,color){
 }
 
 /** =======================
- * store & pulse
+ * overlay engine
+ * ======================= */
+const overlay = document.getElementById("overlay");
+const ctx = overlay.getContext("2d");
+
+let overlayState = {
+  // points: [{time, value, trend}]  trend: +1/-1
+  points: [],
+  pivots: [] // [{time, value, type:'B'|'S'}]
+};
+
+function resizeOverlay(){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = chartEl.getBoundingClientRect();
+  overlay.width = Math.max(1, Math.floor(rect.width * dpr));
+  overlay.height = Math.max(1, Math.floor(rect.height * dpr));
+  overlay.style.width = rect.width + "px";
+  overlay.style.height = rect.height + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  redrawOverlay();
+}
+
+function clearCanvas(){
+  const rect = overlay.getBoundingClientRect();
+  ctx.clearRect(0, 0, rect.width, rect.height);
+}
+
+// Convert time/price -> pixel
+function xOfTime(t){
+  // lightweight-charts expects UTCTimestamp (seconds) number
+  return chart.timeScale().timeToCoordinate(t);
+}
+function yOfPrice(p){
+  return candle.priceToCoordinate(p);
+}
+
+function drawColoredMainLine(){
+  const pts = overlayState.points;
+  if(!pts || pts.length < 2) return;
+
+  ctx.lineWidth = 3;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  // draw as segments, switching color on trend per segment
+  for(let i=1;i<pts.length;i++){
+    const a = pts[i-1];
+    const b = pts[i];
+    const x1 = xOfTime(a.time), y1 = yOfPrice(a.value);
+    const x2 = xOfTime(b.time), y2 = yOfPrice(b.value);
+    if(x1===null||y1===null||x2===null||y2===null) continue;
+
+    const col = (b.trend >= 0) ? GREEN : RED;
+    ctx.strokeStyle = col;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+}
+
+function drawPivotsBig(){
+  const piv = overlayState.pivots || [];
+  if(!piv.length) return;
+
+  // big, bright, glow text
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "bold 18px Arial";
+
+  for(const m of piv){
+    const x = xOfTime(m.time);
+    const y = yOfPrice(m.value);
+    if(x===null || y===null) continue;
+
+    const isB = m.type === "B";
+    const fill = isB ? "#ff2bd6" : "#ffe600";
+    const stroke = "rgba(0,0,0,0.7)";
+
+    ctx.save();
+    ctx.shadowColor = fill;
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = fill;
+
+    // slight offset so it doesn't sit exactly on the line/candle
+    const dy = isB ? 16 : -16;
+    const yy = y + dy;
+
+    // outline for readability
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = stroke;
+    ctx.strokeText(m.type, x, yy);
+
+    ctx.fillText(m.type, x, yy);
+    ctx.restore();
+  }
+}
+
+function redrawOverlay(){
+  clearCanvas();
+  drawColoredMainLine();
+  drawPivotsBig();
+}
+
+// re-render on zoom/pan
+chart.timeScale().subscribeVisibleTimeRangeChange(() => redrawOverlay());
+chart.timeScale().subscribeVisibleLogicalRangeChange(() => redrawOverlay());
+
+// resize observer
+new ResizeObserver(() => resizeOverlay()).observe(chartEl);
+window.addEventListener("resize", () => resizeOverlay());
+
+/** =======================
+ * data store & sources
  * ======================= */
 let barsStore=[];
 let currentSymbol="BTCUSDT";
 let currentTf="1d";
 let ws=null;
 
-function calcMarketPulse(latest){
-  if(!latest) return { label:"Neutral · 中性", value:50, color:"#9aa4b2" };
-  const dir=latest.side==="B"?1:-1;
-  const v=Math.round(50 + dir*latest.confidence*40);
-  if(v>75) return { label:"Bullish · 强多", value:v, color:GREEN };
-  if(v>55) return { label:"Mild Bull · 偏多", value:v, color:"#7dffb6" };
-  if(v>45) return { label:"Neutral · 中性", value:v, color:"#9aa4b2" };
-  return { label:"Bearish · 强空", value:v, color:RED };
-}
-
-/** =======================
- * subscription & misc
- * ======================= */
 function startSubscription(){
   const plan=document.getElementById("plan").value;
   let url="";
@@ -266,9 +365,6 @@ function copyShareLink(){
 }
 function exportChartPNG(){ showToast("Export PNG · 导出图片（占位）"); }
 
-/** =======================
- * data sources
- * ======================= */
 function getBinanceInterval(tf){ return tf; }
 
 function generateSimulatedData(symbol, tf){
@@ -364,17 +460,17 @@ function connectWebSocket(symbol, tf){
 }
 
 /** =======================
- * indicator core (fixed)
- * - no null placeholder => no vertical spikes
- * - normalizePoints => no black screen
- * - B/S uses MT pivot rule
+ * indicator core
+ * - 主线：overlay 真正一根线按趋势分段变色
+ * - 趋势：close 斜率（你要求）
+ * - B/S：MT 拐点规则（local min/max on ext）
  * ======================= */
 function processData(bars){
   if(!bars || bars.length<40) return;
 
   const closes=bars.map(b=>b.close);
 
-  // EMA20
+  // EMA20 (yellow)
   function ema(arr, per){
     const res=new Array(arr.length).fill(NaN);
     const k=2/(per+1);
@@ -385,15 +481,15 @@ function processData(bars){
     return res;
   }
   const auxEMA=ema(closes,20);
-
   const auxPts=[];
   for(let i=0;i<bars.length;i++){
     const v=auxEMA[i];
     if(!isNaN(v)) auxPts.push({ time: bars[i].time, value: v });
   }
-  auxLineSeries.setData(normalizePoints(auxPts));
+  // setData requires sorted-by-time; Binance already sorted; simulated too.
+  auxLineSeries.setData(auxPts);
 
-  // main ext (WMA smoothing)
+  // ext (WMA smoothing)
   const period=14;
   const p=Math.max(2, Math.floor(Math.sqrt(period)));
 
@@ -443,62 +539,34 @@ function processData(bars){
     else trend[i]=trend[i-1];
   }
 
-  // Up/Dn points (EMPTY_VALUE by skipping points)
-  const upPts=[];
-  const dnPts=[];
+  // overlay points (strict one-line; color is per-segment from trend)
+  const oPts=[];
   for(let i=0;i<bars.length;i++){
     const v=ext[i];
     if(isNaN(v)) continue;
-
-    // boundary stitch (like MT x+1) but safe: we'll normalize later
-    if(i>0 && trend[i]!==trend[i-1] && !isNaN(ext[i-1])){
-      const tPrev=bars[i-1].time;
-      const vPrev=ext[i-1];
-      if(trend[i]>0) upPts.push({ time:tPrev, value:vPrev });
-      else if(trend[i]<0) dnPts.push({ time:tPrev, value:vPrev });
-    }
-
-    if(trend[i]>0) upPts.push({ time: bars[i].time, value: v });
-    else if(trend[i]<0) dnPts.push({ time: bars[i].time, value: v });
-    else{
-      const prev=i>0?trend[i-1]:1;
-      if(prev>=0) upPts.push({ time: bars[i].time, value: v });
-      else dnPts.push({ time: bars[i].time, value: v });
-    }
+    const tr = (trend[i]===0 ? (i>0?trend[i-1]:1) : trend[i]);
+    oPts.push({ time: bars[i].time, value: v, trend: tr>=0 ? 1 : -1 });
   }
-  mainUp.setData(normalizePoints(upPts));
-  mainDn.setData(normalizePoints(dnPts));
 
-  // B/S: MT pivot rule (time ascending equivalent)
-  const markers=[];
+  // pivots (MT rule on ext)
+  const piv=[];
+  const markers=[]; // keep native markers too (optional)
   for(let i=1;i<bars.length-1;i++){
     const a=ext[i-1], b=ext[i], c=ext[i+1];
     if(isNaN(a)||isNaN(b)||isNaN(c)) continue;
 
-    // B: local minima
     if(b < a && b <= c){
-      markers.push({
-        time: bars[i].time,
-        text: "B",
-        position: "belowBar",
-        color: "#ff2bd6",
-        shape: "arrowUp"
-      });
+      piv.push({ time: bars[i].time, value: b, type:"B" });
+      markers.push({ time: bars[i].time, text:"B", position:"belowBar", color:"#ff2bd6", shape:"circle" });
     }
-    // S: local maxima
     if(b > a && b >= c){
-      markers.push({
-        time: bars[i].time,
-        text: "S",
-        position: "aboveBar",
-        color: "#ffe600",
-        shape: "arrowDown"
-      });
+      piv.push({ time: bars[i].time, value: b, type:"S" });
+      markers.push({ time: bars[i].time, text:"S", position:"aboveBar", color:"#ffe600", shape:"circle" });
     }
   }
   candle.setMarkers(markers);
 
-  // latest signal: last pivot
+  // latest signal based on last pivot
   let latestSignal=null;
   for(let i=bars.length-2;i>=1;i--){
     const a=ext[i-1], b=ext[i], c=ext[i+1];
@@ -516,7 +584,7 @@ function processData(bars){
     }
   }
 
-  // left panel signals
+  // update left panel
   const box=document.getElementById("signals");
   box.innerHTML="";
   if(latestSignal){
@@ -531,7 +599,7 @@ function processData(bars){
     box.innerHTML="<div class='smallTxt'>No recent signal · 暂无最新信号</div>";
   }
 
-  // market pulse
+  // pulse
   const pulse=calcMarketPulse(latestSignal);
   document.getElementById("pulseCircle").innerText = latestSignal ? pulse.value : "--";
   document.getElementById("pulseCircle").style.borderColor = pulse.color;
@@ -555,6 +623,13 @@ function processData(bars){
   // top price label
   const last=bars[bars.length-1];
   document.getElementById("price").innerText = `${currentSymbol} · ${fmt(last.close)}`;
+
+  // ✅ set overlay state and redraw
+  overlayState.points = oPts;
+  overlayState.pivots = piv;
+
+  // ensure overlay size matches chart and draw
+  resizeOverlay();
 }
 
 async function reload(){
@@ -570,7 +645,8 @@ async function reload(){
   connectWebSocket(symbol, tf);
 }
 
-// start
+// init
+resizeOverlay();
 reload();
 </script>
 </body>
