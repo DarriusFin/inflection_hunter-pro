@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<title>Inflection Hunter Pro v6.3.2 (Overlay) │ Darrius FinTech Inc</title>
+<title>Inflection Hunter Pro v6.3.3 (Overlay Enhanced) │ Darrius FinTech Inc</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -30,31 +30,42 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 .kv{display:flex;justify-content:space-between;gap:10px;margin:6px 0;font-size:13px}
 .kv .k{color:var(--muted)} .kv .v{font-weight:900}
 .badge{font-size:11px;padding:3px 8px;border-radius:999px;background:#26304a;border:1px solid rgba(255,255,255,.08);color:#cfe8ff;}
+
 #chartWrap{position:relative;height:100%;}
 #chartBox{position:absolute;inset:0;display:flex;flex-direction:column;}
 #chartTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;z-index:10;}
 #price{background:rgba(0,0,0,.6);padding:8px 12px;border-radius:12px;font-weight:900;border:1px solid rgba(255,255,255,0.10);}
 #hint{background:rgba(0,0,0,.55);padding:8px 12px;border-radius:12px;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.10);max-width:56%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
 #chart{position:relative;flex:1;width:100%;}
-/* ✅ overlay canvas */
-#overlay{
-  position:absolute; inset:0;
-  pointer-events:none;
-  z-index:9;
-}
+#overlay{position:absolute;inset:0;pointer-events:none;z-index:9;}
+
 input,select,button{width:100%;margin:6px 0;padding:10px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;}
 button{cursor:pointer;font-weight:900;}
 button.primary{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;padding:16px;font-size:16px;}
 button.load-btn{background:linear-gradient(90deg,var(--green),var(--blue));color:#000;border:none;padding:16px;font-size:16px;}
 button.ghost{background:#1e2533;}
+
 .signal.latest{border-left:6px solid var(--green);padding:16px;margin:12px 0;background:var(--panel2);border-radius:12px;font-size:15px;font-weight:900;}
 .signal.latest.sell{border-left-color:var(--red);}
 .smallTxt{font-size:12px;color:var(--muted);line-height:1.5;}
 .hr{height:1px;background:rgba(255,255,255,.06);margin:12px 0}
 .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;font-size:13px;color:#fff;z-index:99999;display:none;max-width:92vw;}
+
 #signals{max-height:300px;overflow-y:auto;}
-@media (max-width:1080px){#main{grid-template-columns:1fr;height:auto}.panel{border-right:none;border-bottom:1px solid var(--border)}#chartWrap{height:60vh}#copyright{display:none}#hint{max-width:70%}}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+.inlineLabel{font-size:12px;color:var(--muted);margin-top:8px;}
+.mini{font-size:12px;color:var(--muted);}
+
+@media (max-width:1080px){
+  #main{grid-template-columns:1fr;height:auto}
+  .panel{border-right:none;border-bottom:1px solid var(--border)}
+  #chartWrap{height:60vh}
+  #copyright{display:none}
+  #hint{max-width:70%}
+}
 </style>
 </head>
 <body>
@@ -133,6 +144,24 @@ button.ghost{background:#1e2533;}
 
     <div class="hr"></div>
 
+    <h3>Aux Line · 黄色辅助线</h3>
+    <div class="grid2">
+      <div>
+        <div class="inlineLabel">Source · 来源</div>
+        <select id="auxSource">
+          <option value="ext" selected>EMA(ext) · 更贴近拐点（推荐）</option>
+          <option value="close">EMA(close) · 传统均线</option>
+        </select>
+      </div>
+      <div>
+        <div class="inlineLabel">Period · 周期</div>
+        <input id="auxPeriod" type="number" min="2" max="200" value="20" />
+      </div>
+    </div>
+    <div class="mini">说明：你觉得黄线离拐点远，多半是因为你用的是 EMA(close)。改为 EMA(ext) 后会自然贴近 B/S。</div>
+
+    <div class="hr"></div>
+
     <h3>Subscription · 订阅</h3>
     <label class="small"><b>Plan · 套餐</b></label>
     <select id="plan">
@@ -141,7 +170,6 @@ button.ghost{background:#1e2533;}
       <option value="annual">Annual · 年付 - $99</option>
       <option value="lifetime">Lifetime · 终身 - $299</option>
     </select>
-
     <button class="primary" onclick="startSubscription()">Subscribe · 订阅</button>
     <div class="smallTxt">Select plan and click to pay via Stripe · 选择套餐后点击跳转支付</div>
 
@@ -156,7 +184,7 @@ button.ghost{background:#1e2533;}
 
     <h3>Share & Export · 分享与导出</h3>
     <button class="ghost" onclick="copyShareLink()">Copy Share Link · 复制分享链接</button>
-    <button class="ghost" onclick="exportChartPNG()">Export PNG · 导出图片</button>
+    <button class="ghost" onclick="exportChartPNG()">Export PNG · 导出图片（含Overlay）</button>
 
     <div class="footer">Powered by DarriusAI · Inflection Hunter<br/>© 2025 Darrius FinTech Inc</div>
   </div>
@@ -183,6 +211,7 @@ function fmt(n){
   const x=Number(n);
   return Math.abs(x)>=1000 ? x.toFixed(2) : x.toFixed(4);
 }
+function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
 function calcMarketPulse(latest){
   if(!latest) return { label:"Neutral · 中性", value:50, color:"#9aa4b2" };
@@ -212,7 +241,7 @@ let candle = chart.addCandlestickSeries({
   borderVisible:false
 });
 
-// ✅ 只保留黄线（EMA20）；主线改为 overlay（真正一根线变色）
+// ✅ 只保留黄线（EMA）；主线为 overlay 真正一根线按趋势红绿
 let auxLineSeries = chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
 
 // risk lines
@@ -234,9 +263,8 @@ const overlay = document.getElementById("overlay");
 const ctx = overlay.getContext("2d");
 
 let overlayState = {
-  // points: [{time, value, trend}]  trend: +1/-1
-  points: [],
-  pivots: [] // [{time, value, type:'B'|'S'}]
+  points: [],   // [{time, value, trend}]
+  pivots: []    // [{time, priceLabel, type:'B'|'S'}]
 };
 
 function resizeOverlay(){
@@ -256,13 +284,8 @@ function clearCanvas(){
 }
 
 // Convert time/price -> pixel
-function xOfTime(t){
-  // lightweight-charts expects UTCTimestamp (seconds) number
-  return chart.timeScale().timeToCoordinate(t);
-}
-function yOfPrice(p){
-  return candle.priceToCoordinate(p);
-}
+function xOfTime(t){ return chart.timeScale().timeToCoordinate(t); }
+function yOfPrice(p){ return candle.priceToCoordinate(p); }
 
 function drawColoredMainLine(){
   const pts = overlayState.points;
@@ -272,7 +295,6 @@ function drawColoredMainLine(){
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  // draw as segments, switching color on trend per segment
   for(let i=1;i<pts.length;i++){
     const a = pts[i-1];
     const b = pts[i];
@@ -280,9 +302,7 @@ function drawColoredMainLine(){
     const x2 = xOfTime(b.time), y2 = yOfPrice(b.value);
     if(x1===null||y1===null||x2===null||y2===null) continue;
 
-    const col = (b.trend >= 0) ? GREEN : RED;
-    ctx.strokeStyle = col;
-
+    ctx.strokeStyle = (b.trend >= 0) ? GREEN : RED;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -294,35 +314,28 @@ function drawPivotsBig(){
   const piv = overlayState.pivots || [];
   if(!piv.length) return;
 
-  // big, bright, glow text
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = "bold 18px Arial";
+  ctx.font = "bold 22px Arial";         // ✅ 更大更亮眼
 
   for(const m of piv){
     const x = xOfTime(m.time);
-    const y = yOfPrice(m.value);
+    const y = yOfPrice(m.priceLabel);   // ✅ 用 ATR 偏移后的“价格位置”
     if(x===null || y===null) continue;
 
     const isB = m.type === "B";
     const fill = isB ? "#ff2bd6" : "#ffe600";
-    const stroke = "rgba(0,0,0,0.7)";
+    const stroke = "rgba(0,0,0,0.75)";
 
     ctx.save();
     ctx.shadowColor = fill;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 14;
     ctx.fillStyle = fill;
 
-    // slight offset so it doesn't sit exactly on the line/candle
-    const dy = isB ? 16 : -16;
-    const yy = y + dy;
-
-    // outline for readability
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.strokeStyle = stroke;
-    ctx.strokeText(m.type, x, yy);
-
-    ctx.fillText(m.type, x, yy);
+    ctx.strokeText(m.type, x, y);
+    ctx.fillText(m.type, x, y);
     ctx.restore();
   }
 }
@@ -363,7 +376,31 @@ function copyShareLink(){
   try{ navigator.clipboard.writeText(window.location.href); showToast("Link copied · 已复制分享链接"); }
   catch{ showToast("Copy failed · 复制失败"); }
 }
-function exportChartPNG(){ showToast("Export PNG · 导出图片（占位）"); }
+
+/** ✅ 3) 导出 PNG：把 chart 截图 + overlay 合成 */
+function exportChartPNG(){
+  try{
+    const base = chart.takeScreenshot(); // canvas
+    const out = document.createElement("canvas");
+    out.width = base.width;
+    out.height = base.height;
+    const octx = out.getContext("2d");
+
+    octx.drawImage(base, 0, 0);
+
+    // overlay 可能有不同 dpr，按输出尺寸拉伸叠加
+    octx.drawImage(overlay, 0, 0, out.width, out.height);
+
+    const a = document.createElement("a");
+    const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
+    a.download = `${currentSymbol}_${currentTf}_InflectionHunter_${ts}.png`;
+    a.href = out.toDataURL("image/png");
+    a.click();
+    showToast("PNG exported · 已导出（含Overlay）");
+  }catch(e){
+    showToast("Export failed · 导出失败");
+  }
+}
 
 function getBinanceInterval(tf){ return tf; }
 
@@ -462,38 +499,48 @@ function connectWebSocket(symbol, tf){
 /** =======================
  * indicator core
  * - 主线：overlay 真正一根线按趋势分段变色
- * - 趋势：close 斜率（你要求）
+ * - 趋势：close 斜率
  * - B/S：MT 拐点规则（local min/max on ext）
+ * - 1) 去重：cooldown + 同类信号取更极端者
+ * - 2) 位置：用 ATR 偏移到 high/low 上下
  * ======================= */
+function ema(arr, per){
+  const res=new Array(arr.length).fill(NaN);
+  per=Math.max(2, Math.floor(per));
+  const k=2/(per+1);
+  let sum=0;
+  for(let i=0;i<per && i<arr.length;i++) sum+=arr[i];
+  if(arr.length>=per) res[per-1]=sum/per;
+  for(let i=per;i<arr.length;i++){
+    if(isNaN(res[i-1])) res[i-1]=arr[i-1];
+    res[i]=arr[i]*k+res[i-1]*(1-k);
+  }
+  return res;
+}
+
+function calcATR(bars, per){
+  per=Math.max(2, Math.floor(per));
+  const tr = new Array(bars.length).fill(NaN);
+  for(let i=0;i<bars.length;i++){
+    const h=bars[i].high, l=bars[i].low;
+    if(i===0){ tr[i]=h-l; continue; }
+    const pc=bars[i-1].close;
+    tr[i]=Math.max(h-l, Math.abs(h-pc), Math.abs(l-pc));
+  }
+  return ema(tr, per);
+}
+
 function processData(bars){
-  if(!bars || bars.length<40) return;
+  if(!bars || bars.length<60) return;
 
   const closes=bars.map(b=>b.close);
 
-  // EMA20 (yellow)
-  function ema(arr, per){
-    const res=new Array(arr.length).fill(NaN);
-    const k=2/(per+1);
-    let sum=0;
-    for(let i=0;i<per;i++) sum+=arr[i];
-    res[per-1]=sum/per;
-    for(let i=per;i<arr.length;i++) res[i]=arr[i]*k+res[i-1]*(1-k);
-    return res;
-  }
-  const auxEMA=ema(closes,20);
-  const auxPts=[];
-  for(let i=0;i<bars.length;i++){
-    const v=auxEMA[i];
-    if(!isNaN(v)) auxPts.push({ time: bars[i].time, value: v });
-  }
-  // setData requires sorted-by-time; Binance already sorted; simulated too.
-  auxLineSeries.setData(auxPts);
-
-  // ext (WMA smoothing)
+  // ext (WMA smoothing) — keep as your core signal
   const period=14;
   const p=Math.max(2, Math.floor(Math.sqrt(period)));
 
   function wma(arr, per){
+    per=Math.max(2, Math.floor(per));
     const res=new Array(arr.length).fill(NaN);
     const weights=Array.from({length:per},(_,i)=>i+1);
     const wsum=weights.reduce((a,b)=>a+b,0);
@@ -523,7 +570,7 @@ function processData(bars){
     if(cnt>0) ext[i]=sum/cnt;
   }
 
-  // trend by CLOSE slope
+  // trend by CLOSE slope (your requirement)
   const N=5;
   const trend=new Array(closes.length).fill(0);
   for(let i=1;i<closes.length;i++){
@@ -539,7 +586,29 @@ function processData(bars){
     else trend[i]=trend[i-1];
   }
 
-  // overlay points (strict one-line; color is per-segment from trend)
+  // ✅ Aux line (yellow): default EMA(ext) to be closer to pivots
+  const auxSource = document.getElementById("auxSource").value;
+  const auxPer = clamp(parseInt(document.getElementById("auxPeriod").value || "20", 10), 2, 200);
+
+  const baseArr = (auxSource === "ext") ? ext : closes;
+  const aux = ema(baseArr.map(v => (isNaN(v) ? 0 : v)), auxPer);
+  const auxPts=[];
+  for(let i=0;i<bars.length;i++){
+    const v=aux[i];
+    // if source ext, skip early NaN zones more strictly
+    if(auxSource === "ext"){
+      if(isNaN(ext[i]) || isNaN(v)) continue;
+    }else{
+      if(isNaN(v)) continue;
+    }
+    auxPts.push({ time: bars[i].time, value: v });
+  }
+  auxLineSeries.setData(auxPts);
+
+  // ATR for pivot label placement
+  const atr = calcATR(bars, 14);
+
+  // overlay points (main line)
   const oPts=[];
   for(let i=0;i<bars.length;i++){
     const v=ext[i];
@@ -548,39 +617,82 @@ function processData(bars){
     oPts.push({ time: bars[i].time, value: v, trend: tr>=0 ? 1 : -1 });
   }
 
-  // pivots (MT rule on ext)
+  // ==========
+  // 1) 去重 B/S：cooldown + 同类取更极端
+  // ==========
+  const cooldown = 8; // 8根K内同类不重复（你可以调 6~12）
   const piv=[];
-  const markers=[]; // keep native markers too (optional)
-  for(let i=1;i<bars.length-1;i++){
+
+  function tryPushPivot(i, type){
+    const bExt = ext[i];
+    if(isNaN(bExt)) return;
+
+    const last = piv[piv.length-1];
+
+    // compute label price by ATR + high/low offsets
+    const a = atr[i];
+    const atrv = (!isNaN(a) && a>0) ? a : (bars[i].high - bars[i].low);
+    const pad = atrv * 0.35;  // ✅ 2) ATR 偏移（更专业更清楚）
+
+    const priceLabel = (type==="B")
+      ? (bars[i].low - pad)
+      : (bars[i].high + pad);
+
+    const candidate = { time: bars[i].time, type, idx:i, extVal:bExt, priceLabel };
+
+    if(!last){
+      piv.push(candidate);
+      return;
+    }
+
+    // same type within cooldown: keep the more extreme (B=lower, S=higher)
+    if(last.type === type && (candidate.idx - last.idx) <= cooldown){
+      const better = (type==="B") ? (candidate.extVal < last.extVal) : (candidate.extVal > last.extVal);
+      if(better){
+        piv[piv.length-1] = candidate; // replace
+      }
+      return;
+    }
+
+    // optional: enforce alternation? (commented; keep flexible)
+    // if(last.type === type) return;
+
+    piv.push(candidate);
+  }
+
+  // MT pivot rule on ext: local min/max
+  for(let i=2;i<bars.length-2;i++){
     const a=ext[i-1], b=ext[i], c=ext[i+1];
     if(isNaN(a)||isNaN(b)||isNaN(c)) continue;
 
     if(b < a && b <= c){
-      piv.push({ time: bars[i].time, value: b, type:"B" });
-      markers.push({ time: bars[i].time, text:"B", position:"belowBar", color:"#ff2bd6", shape:"circle" });
+      tryPushPivot(i, "B");
     }
     if(b > a && b >= c){
-      piv.push({ time: bars[i].time, value: b, type:"S" });
-      markers.push({ time: bars[i].time, text:"S", position:"aboveBar", color:"#ffe600", shape:"circle" });
+      tryPushPivot(i, "S");
     }
   }
+
+  // keep native markers too (optional but nice)
+  const markers = piv.map(pv => ({
+    time: pv.time,
+    text: pv.type,
+    position: pv.type==="B" ? "belowBar" : "aboveBar",
+    color: pv.type==="B" ? "#ff2bd6" : "#ffe600",
+    shape: "circle"
+  }));
   candle.setMarkers(markers);
 
-  // latest signal based on last pivot
+  // latest signal: last pivot
   let latestSignal=null;
-  for(let i=bars.length-2;i>=1;i--){
-    const a=ext[i-1], b=ext[i], c=ext[i+1];
-    if(isNaN(a)||isNaN(b)||isNaN(c)) continue;
-
-    if(b < a && b <= c){
-      latestSignal={ side:"B", confidence:0.85, signal_price:bars[i].low, entry_price:bars[i].low*1.002,
-        risk:{ entry:bars[i].low*1.002, stop:bars[i].low*0.93, targets:[bars[i].low*1.07, bars[i].low*1.16, bars[i].low*1.28] } };
-      break;
-    }
-    if(b > a && b >= c){
-      latestSignal={ side:"S", confidence:0.85, signal_price:bars[i].high, entry_price:bars[i].high*0.998,
-        risk:{ entry:bars[i].high*0.998, stop:bars[i].high*1.07, targets:[bars[i].high*0.93, bars[i].high*0.84, bars[i].high*0.72] } };
-      break;
+  if(piv.length){
+    const pv=piv[piv.length-1];
+    if(pv.type==="B"){
+      latestSignal={ side:"B", confidence:0.85, signal_price:bars[pv.idx].low, entry_price:bars[pv.idx].low*1.002,
+        risk:{ entry:bars[pv.idx].low*1.002, stop:bars[pv.idx].low*0.93, targets:[bars[pv.idx].low*1.07, bars[pv.idx].low*1.16, bars[pv.idx].low*1.28] } };
+    }else{
+      latestSignal={ side:"S", confidence:0.85, signal_price:bars[pv.idx].high, entry_price:bars[pv.idx].high*0.998,
+        risk:{ entry:bars[pv.idx].high*0.998, stop:bars[pv.idx].high*1.07, targets:[bars[pv.idx].high*0.93, bars[pv.idx].high*0.84, bars[pv.idx].high*0.72] } };
     }
   }
 
@@ -626,10 +738,10 @@ function processData(bars){
 
   // ✅ set overlay state and redraw
   overlayState.points = oPts;
-  overlayState.pivots = piv;
+  overlayState.pivots = piv.map(pv => ({ time: pv.time, type: pv.type, priceLabel: pv.priceLabel }));
 
   // ensure overlay size matches chart and draw
-  resizeOverlay();
+  requestAnimationFrame(() => resizeOverlay());
 }
 
 async function reload(){
@@ -644,6 +756,10 @@ async function reload(){
   await loadHistoricalData(symbol, tf);
   connectWebSocket(symbol, tf);
 }
+
+// ✅ 当你修改黄线参数时，直接重算（不需要重新拉数据）
+document.getElementById("auxSource").addEventListener("change", () => { if(barsStore.length) processData(barsStore); });
+document.getElementById("auxPeriod").addEventListener("change", () => { if(barsStore.length) processData(barsStore); });
 
 // init
 resizeOverlay();
