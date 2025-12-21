@@ -192,9 +192,8 @@ let candle = chart.addCandlestickSeries({
   borderVisible: false
 });
 
-// ✅ 主线（分段变色）：两条线互斥显示（EMPTY_VALUE = Whitespace）
-let mainUp = chart.addLineSeries({ color: GREEN, lineWidth: 3 });
-let mainDn = chart.addLineSeries({ color: RED,   lineWidth: 3 });
+// ✅✅ 只有一根主线（永远只有一种颜色）：
+let mainLine = chart.addLineSeries({ color: RED, lineWidth: 3 });
 
 // ✅ 黄色辅线：EMA20
 let auxLineSeries = chart.addLineSeries({ color: ORANGE, lineWidth: 2 });
@@ -329,7 +328,7 @@ function connectWebSocket(symbol, tf) {
         close: parseFloat(k.c)
       };
       candle.update(newBar);
-      // 你原实现没有维护bars数组，这里不实时重算主线（避免错）
+      // 这里不实时重算主线（避免缓存bars不同步造成错）
     } catch {}
   };
 
@@ -355,7 +354,7 @@ function processData(bars) {
     return res;
   }
 
-  // === ext 主线值（你的算法不变）===
+  // === ext 主线值 ===
   const wma_half = wma(closes, Math.floor(period / 2));
   const wma_full = wma(closes, period);
   const vect = new Array(closes.length).fill(NaN);
@@ -386,61 +385,24 @@ function processData(bars) {
   const auxEMA = ema(closes, 20);
   auxLineSeries.setData(auxEMA.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v })));
 
-  // ==========================================================
-  // ✅✅ 关键：按 close 斜率做趋势，EMPTY_VALUE(whitespace) 隐藏另一条线
-  // ==========================================================
-  // trend: 1=up, -1=down
-  const trend = new Array(closes.length).fill(0);
-  for (let i = 1; i < closes.length; i++) {
-    if (isNaN(closes[i]) || isNaN(closes[i-1])) { trend[i] = trend[i-1] || 0; continue; }
-    if (closes[i] > closes[i-1]) trend[i] = 1;
-    else if (closes[i] < closes[i-1]) trend[i] = -1;
-    else trend[i] = trend[i-1] || 0; // 平盘：继承前一趋势
+  // ✅✅ 只保留一根主线：数据只有一份
+  const mainData = ext.map((v, i) => (isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v }));
+  mainLine.setData(mainData);
+
+  // ✅✅ 主线颜色：只看“当前趋势”（按 close 斜率）
+  // 这样画面上永远只有两条线：主线(一种颜色) + 黄线
+  const lastIdx = closes.length - 1;
+  let curTrend = 0;
+  for (let i = lastIdx; i >= 1; i--) {
+    if (isNaN(closes[i]) || isNaN(closes[i-1])) continue;
+    if (closes[i] > closes[i-1]) { curTrend = 1; break; }
+    if (closes[i] < closes[i-1]) { curTrend = -1; break; }
   }
-  // 处理开头：如果 trend[1] 还是 0，就默认跟后面第一个非0
-  if (trend[1] === 0) {
-    for (let i = 2; i < trend.length; i++) {
-      if (trend[i] !== 0) { trend[1] = trend[i]; break; }
-    }
-  }
-  trend[0] = trend[1] || 1;
-
-  // Uptrend/Dntrend: null => EMPTY_VALUE
-  const Uptrend = new Array(closes.length).fill(null);
-  const Dntrend = new Array(closes.length).fill(null);
-
-  // 先按趋势填充（对应：Uptrend[x]=ExtMapBuffer[x], Dntrend[x]=EMPTY_VALUE）
-  for (let i = 0; i < closes.length; i++) {
-    if (isNaN(ext[i])) { Uptrend[i] = null; Dntrend[i] = null; continue; }
-    if (trend[i] > 0) { Uptrend[i] = ext[i]; Dntrend[i] = null; }
-    else if (trend[i] < 0) { Dntrend[i] = ext[i]; Uptrend[i] = null; }
-    else { Uptrend[i] = null; Dntrend[i] = null; }
-  }
-
-  // 拐点“桥接”——等价你 MQL 的：
-  // if (trend[x]>0 && trend[x+1]<0) Uptrend[x+1]=ExtMapBuffer[x+1]
-  // forward 版本：若 trend[i] 与 trend[i-1] 翻转，就把 i-1 也补到新颜色里
-  for (let i = 1; i < closes.length; i++) {
-    if (isNaN(ext[i-1])) continue;
-    if (trend[i] > 0 && trend[i-1] < 0) {
-      Uptrend[i-1] = ext[i-1];
-      Dntrend[i-1] = null;
-    } else if (trend[i] < 0 && trend[i-1] > 0) {
-      Dntrend[i-1] = ext[i-1];
-      Uptrend[i-1] = null;
-    }
-  }
-
-  // 转换为 lightweight-charts 数据：null => {time} (WhitespaceData)
-  const upSeriesData = Uptrend.map((v, i) => (v === null || isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v }));
-  const dnSeriesData = Dntrend.map((v, i) => (v === null || isNaN(v) ? { time: bars[i].time } : { time: bars[i].time, value: v }));
-
-  mainUp.setData(upSeriesData);
-  mainDn.setData(dnSeriesData);
+  mainLine.applyOptions({ color: curTrend >= 0 ? GREEN : RED });
 
   // === B/S 标记（ext vs EMA20）===
   const markers = [];
-  for (let i = 1; i < closes.length; i++) {
+  for (let i = 2; i < closes.length; i++) {
     if (!isNaN(ext[i]) && !isNaN(ext[i - 1]) && !isNaN(auxEMA[i]) && !isNaN(auxEMA[i - 1])) {
       if (ext[i - 1] <= auxEMA[i - 1] && ext[i] > auxEMA[i]) {
         markers.push({ time: bars[i].time, text: "B", position: "belowBar", color: GREEN, shape: "circle" });
