@@ -16,7 +16,7 @@ body{margin:0;background:radial-gradient(circle at top left,#182035,#0b0f17);col
 #brandTitle{font-weight:900}
 #subtitle{font-size:12px;color:var(--muted);margin-top:2px}
 #topRight{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:1;min-width:0;}
-#status{padding:7px 12px;border-radius:999px;font-size:12px;background:#1e2533;border:1px solid rgba(255,255,255,0.06);white-space:nowrap;}
+#status{padding:7px 12px;border-radius:999px;font-size:12px;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;white-space:nowrap;}
 #copyright{font-size:12px;color:#fff;opacity:0.85;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);padding:6px 12px;border-radius:999px;white-space:nowrap;max-width:38vw;overflow:hidden;text-overflow:ellipsis;}
 #main{display:grid;grid-template-columns:320px 1fr 360px;height:calc(100vh - 64px);}
 .panel{background:var(--panel);border-right:1px solid var(--border);padding:16px;overflow:auto;}
@@ -49,6 +49,7 @@ button.ghost{background:#1e2533;}
 .hr{height:1px;background:rgba(255,255,255,.06);margin:12px 0}
 .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;font-size:13px;color:#fff;z-index:99999;display:none;max-width:92vw;}
+#signals{max-height:300px;overflow-y:auto;}
 @media (max-width:1080px){#main{grid-template-columns:1fr;height:auto}.panel{border-right:none;border-bottom:1px solid var(--border)}#chartWrap{height:60vh}#copyright{display:none}#hint{max-width:70%}}
 </style>
 </head>
@@ -93,6 +94,11 @@ button.ghost{background:#1e2533;}
       </label>
     </div>
 
+    <div class="hr"></div>
+
+    <h3>Live Signals · 实时信号</h3>
+    <div id="signals">Loading… / 加载中…</div>
+
     <div class="footer">
       <b>Disclaimer · 免责声明:</b> Educational only, not financial advice. / 仅供学习交流，不构成投资建议。
     </div>
@@ -135,11 +141,6 @@ button.ghost{background:#1e2533;}
     <button class="primary" onclick="startSubscription()">Subscribe · 订阅</button>
 
     <div class="smallTxt">Select plan and click to pay via Stripe · 选择套餐后点击跳转支付</div>
-
-    <div class="hr"></div>
-
-    <h3>Live Signals · 实时信号</h3>
-    <div id="signals">Loading… / 加载中…</div>
 
     <div class="hr"></div>
 
@@ -209,7 +210,6 @@ function calcMarketPulse(latest) {
   return { label: "Bearish · 强空", value: v, color: "#ff4757" };
 }
 
-// 订阅跳转
 function startSubscription() {
   const plan = document.getElementById("plan").value;
   let url = "";
@@ -232,7 +232,6 @@ function startSubscription() {
   }
 }
 
-// 主图数据生成与渲染（已彻底修复时间戳，确保显示）
 function generateData(symbol, tf) {
   const num_bars = 200;
   const interval = tf === "60" ? 3600 : 86400;
@@ -242,7 +241,7 @@ function generateData(symbol, tf) {
 
   const bars = [];
   let price = base;
-  let time = now - (num_bars * interval); // 正确从过去开始
+  let time = now - (num_bars - 1) * interval;
 
   for (let i = 0; i < num_bars; i++) {
     const trend_factor = Math.sin(i / 20) * base * 0.015;
@@ -256,7 +255,6 @@ function generateData(symbol, tf) {
     bars.push({ time: time + i * interval, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2) });
   }
 
-  // VIDYA 算法 + 绿红切换 + B/S 标记
   const closes = bars.map(b => b.close);
   const period = 14;
   const p = Math.floor(Math.sqrt(period));
@@ -399,7 +397,7 @@ async function reload() {
   }
 
   setHint("Ready · 就绪");
-  showToast("Chart loaded successfully · 图表加载完成");
+  showToast("Chart loaded · 图表加载完成");
 }
 
 reload();
